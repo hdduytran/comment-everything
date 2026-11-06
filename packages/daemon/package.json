@@ -1,0 +1,30 @@
+{
+  "name": "@comment-everything/daemon",
+  "version": "0.1.0",
+  "description": "Local HTTP + MCP daemon for comment-everything.",
+  "license": "MIT",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsup",
+    "test": "vitest run",
+    "typecheck": "tsc -p tsconfig.json"
+  },
+  "dependencies": {
+    "@comment-everything/core": "workspace:*",
+    "@hono/node-server": "^2.1.0",
+    "@modelcontextprotocol/sdk": "^1.32.0",
+    "hono": "^4.10.0",
+    "zod": "^4.1.0"
+  }
+}
