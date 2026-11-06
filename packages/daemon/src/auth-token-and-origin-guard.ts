@@ -16,6 +16,8 @@ export const FILES_PATH = /^\/(?:s\/[^/]+\/)?files\//;
 
 /** Paths reachable without a token (still subject to Host and Origin checks). */
 const PUBLIC_PATHS = new Set(['/health', '/view']);
+/** Static viewer bundle: code only, no secrets, and the sandboxed frame agent loads it tokenless. */
+const PUBLIC_PREFIXES = ['/_ce/'];
 
 function constantTimeEqual(a: string, b: string): boolean {
   const ba = Buffer.from(a);
@@ -97,7 +99,13 @@ export function presentedToken(c: Context): string | undefined {
 /** Require the per-install token on every non-public route (401 when missing or wrong). */
 export function tokenGuard(cfg: GuardConfig): MiddlewareHandler {
   return async (c, next) => {
-    if (PUBLIC_PATHS.has(c.req.path) || c.req.method === 'OPTIONS') return next();
+    if (
+      PUBLIC_PATHS.has(c.req.path) ||
+      PUBLIC_PREFIXES.some((p) => c.req.path.startsWith(p)) ||
+      c.req.method === 'OPTIONS'
+    ) {
+      return next();
+    }
     const token = presentedToken(c);
     if (!token || !constantTimeEqual(token, cfg.token)) {
       c.header('WWW-Authenticate', 'Bearer');

@@ -12,9 +12,11 @@ import {
   resolveHome,
   type DaemonLock,
 } from './daemon-lockfile.js';
+import { FileChangeWatcher } from './file-change-watcher.js';
 import { JobQueue } from './job-queue.js';
 import { MCP_SERVER_VERSION } from './mcp-server-tools.js';
 import { ProjectRootRegistry } from './project-root-registry.js';
+import { defaultViewerDir } from './viewer-assets-route.js';
 
 export interface StartDaemonOptions {
   /** Defaults to 4317. Use 0 only in tests; the daemon never auto-increments on conflict. */
@@ -24,6 +26,8 @@ export interface StartDaemonOptions {
   /** Watch `.comments/` for edits by other processes (default true). */
   watch?: boolean;
   sandboxHtml?: boolean;
+  /** Built viewer bundle directory (default: auto-detected next to the CLI or in the monorepo). */
+  viewerDir?: string;
   /** Write/replace the lockfile (default true). */
   useLockfile?: boolean;
 }
@@ -70,6 +74,7 @@ export async function startDaemon(opts: StartDaemonOptions = {}): Promise<Runnin
   wiring.service = service;
   await registry.load();
 
+  const fileWatcher = new FileChangeWatcher(bus);
   let port = 0;
   const app = createApp({
     token,
@@ -80,6 +85,8 @@ export async function startDaemon(opts: StartDaemonOptions = {}): Promise<Runnin
     jobs,
     version: MCP_SERVER_VERSION,
     sandboxHtml: opts.sandboxHtml,
+    viewerDir: opts.viewerDir ?? defaultViewerDir(),
+    fileWatcher,
   });
 
   const server = await listen(app.fetch, opts.port ?? DEFAULT_PORT);
@@ -91,6 +98,7 @@ export async function startDaemon(opts: StartDaemonOptions = {}): Promise<Runnin
     const result = await acquireLock(lock, home);
     if (!result.ok) {
       await closeServer(server);
+      fileWatcher.close();
       await registry.close();
       throw new DaemonAlreadyRunningError(result.existing);
     }
@@ -105,6 +113,7 @@ export async function startDaemon(opts: StartDaemonOptions = {}): Promise<Runnin
     jobs,
     async stop() {
       if (useLock) await releaseLock(process.pid, home);
+      fileWatcher.close();
       await registry.close();
       await closeServer(server);
     },

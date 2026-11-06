@@ -15,7 +15,9 @@ import { mountMcpHttpEndpoint } from './mcp-http-endpoint.js';
 import type { ProjectRootRegistry } from './project-root-registry.js';
 import { mountRestRoutes } from './rest-comment-routes.js';
 import { ScopeError, resolveScopedPath, serveFile } from './scoped-file-server.js';
-import { renderViewerPage } from './viewer-placeholder-page.js';
+import type { FileChangeWatcher } from './file-change-watcher.js';
+import { VIEWER_ASSET_PREFIX, VIEWER_CSP, renderViewerPage } from './viewer-page.js';
+import { mountViewerAssets } from './viewer-assets-route.js';
 
 export interface AppDeps extends GuardConfig {
   service: CommentService;
@@ -25,7 +27,15 @@ export interface AppDeps extends GuardConfig {
   version: string;
   /** Serve project HTML/SVG with a CSP sandbox (default true). */
   sandboxHtml?: boolean;
+  /** Directory holding the built viewer bundle; `/_ce/*` is 404 without it. */
+  viewerDir?: string;
+  /** Publishes `file.changed` for files opened in the viewer. */
+  fileWatcher?: FileChangeWatcher;
 }
+
+/** Query flag set by the viewer on its iframe so the daemon splices the frame agent into HTML. */
+export const FRAME_AGENT_FLAG = 'ce-frame';
+export const FRAME_AGENT_FILE = 'frame-agent.js';
 
 /** Assemble the Hono app: guards -> routes. Pure (no listening), so tests can call `app.request`. */
 export function createApp(deps: AppDeps): Hono {
@@ -57,12 +67,20 @@ export function createApp(deps: AppDeps): Hono {
     const root = m?.[1] ? deps.registry.get(m[1]) : undefined;
     if (!m || !root) return c.json({ error: 'not_found' }, 404);
     const file = await resolveScopedPath(root.root, m[2] ?? '');
-    return serveFile(file, { sandboxHtml: deps.sandboxHtml ?? true, range: c.req.header('range') });
+    const host = c.req.header('host') ?? '';
+    return serveFile(file, {
+      sandboxHtml: deps.sandboxHtml ?? true,
+      range: c.req.header('range'),
+      injectScript:
+        c.req.query(FRAME_AGENT_FLAG) === '1' && deps.viewerDir
+          ? `http://${host}${VIEWER_ASSET_PREFIX}${FRAME_AGENT_FILE}`
+          : undefined,
+    });
   };
   app.get('/files/:rootId/*', filesHandler);
   app.get('/s/:token/files/:rootId/*', filesHandler);
 
-  // Viewer entry point. Placeholder until the viewer app exists; it already carries the token.
+  // Viewer entry point: shell page carrying the token, scripts come from /_ce/.
   app.get('/view', async (c) => {
     const requested = c.req.query('path');
     if (!requested || !path.isAbsolute(requested)) {
@@ -83,20 +101,15 @@ export function createApp(deps: AppDeps): Hono {
     }
     c.header('Cache-Control', 'no-store');
     c.header('X-Frame-Options', 'DENY');
-    c.header(
-      'Content-Security-Policy',
-      "default-src 'none'; style-src 'unsafe-inline'; frame-ancestors 'none'",
-    );
+    c.header('Content-Security-Policy', VIEWER_CSP);
+    const source = path.relative(root.root, real).split(path.sep).join('/');
+    deps.fileWatcher?.watch(root.root, source);
     return c.html(
-      renderViewerPage({
-        token: deps.token,
-        rootId: root.id,
-        root: root.root,
-        source: path.relative(root.root, real).split(path.sep).join('/'),
-      }),
+      renderViewerPage({ token: deps.token, rootId: root.id, root: root.root, source }),
     );
   });
 
+  mountViewerAssets(app, deps.viewerDir);
   mountEventsRoute(app, deps.bus);
   mountRestRoutes(app, deps);
   mountMcpHttpEndpoint(app, deps.service);

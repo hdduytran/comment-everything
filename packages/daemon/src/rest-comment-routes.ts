@@ -1,6 +1,7 @@
 import type { Context, Hono } from 'hono';
 import { CommentPatchSchema, CommentStatusSchema } from '@comment-everything/core';
 import { z } from 'zod';
+import { mountAssetUploadRoute } from './asset-upload-route.js';
 import { CreateBatchBodySchema, ValidationError, type CommentService } from './comment-service.js';
 import type { JobQueue } from './job-queue.js';
 import { ProjectRootRegistry, RootRegistryError } from './project-root-registry.js';
@@ -35,6 +36,8 @@ export function mountRestRoutes(app: Hono, { service, registry, jobs }: RestDeps
     const batch = await service.createBatch(body);
     return c.json(batch, 201);
   });
+
+  mountAssetUploadRoute(app, service);
 
   app.get('/comments', async (c) => {
     const q = ListQuerySchema.parse(c.req.query());

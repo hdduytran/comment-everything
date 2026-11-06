@@ -11,4 +11,7 @@ export * from './mcp-server-tools.js';
 export * from './mcp-untrusted-output-format.js';
 export * from './project-root-registry.js';
 export * from './scoped-file-server.js';
-export * from './viewer-placeholder-page.js';
+export * from './viewer-page.js';
+export * from './asset-upload-route.js';
+export * from './file-change-watcher.js';
+export * from './viewer-assets-route.js';

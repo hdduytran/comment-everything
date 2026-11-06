@@ -1,5 +1,5 @@
 import { createReadStream } from 'node:fs';
-import { realpath, stat } from 'node:fs/promises';
+import { readFile, realpath, stat } from 'node:fs/promises';
 import path from 'node:path';
 import { Readable } from 'node:stream';
 
@@ -92,6 +92,24 @@ export interface ServeOptions {
   sandboxHtml: boolean;
   /** Value of the incoming `Range` header, if any. */
   range?: string | null;
+  /**
+   * Absolute URL of a classic script to splice into served HTML (the viewer's frame agent).
+   * Ignored for non-HTML files. The response is then a plain 200 without Range support.
+   */
+  injectScript?: string;
+}
+
+const MAX_INJECTED_HTML_BYTES = 20 * 1024 * 1024;
+
+/**
+ * Insert a `<script src>` tag before the last `</body>` (or at the end). Works on bytes via a
+ * latin1 view so the document's own charset is never re-encoded.
+ */
+export function injectScriptTag(html: Buffer, scriptUrl: string): Buffer {
+  const tag = Buffer.from(`<script src="${scriptUrl.replace(/"/g, '%22')}"></script>`);
+  const at = html.toString('latin1').toLowerCase().lastIndexOf('</body');
+  if (at === -1) return Buffer.concat([html, tag]);
+  return Buffer.concat([html.subarray(0, at), tag, html.subarray(at)]);
 }
 
 /** Build a Response (with Range support for media seeking) for a resolved file. */
@@ -111,6 +129,14 @@ export async function serveFile(file: string, opts: ServeOptions): Promise<Respo
       'Content-Security-Policy',
       'sandbox allow-scripts allow-forms allow-popups allow-modals',
     );
+  }
+
+  if (opts.injectScript && type.startsWith('text/html')) {
+    if (info.size > MAX_INJECTED_HTML_BYTES) throw new ScopeError(403, 'File too large to view');
+    const body = injectScriptTag(await readFile(file), opts.injectScript);
+    headers.delete('Accept-Ranges');
+    headers.set('Content-Length', String(body.length));
+    return new Response(new Uint8Array(body), { status: 200, headers });
   }
 
   let start = 0;

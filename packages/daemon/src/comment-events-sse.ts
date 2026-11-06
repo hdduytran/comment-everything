@@ -8,7 +8,9 @@ export type CommentEvent =
   | { type: 'comment.updated'; root: string; comment: Comment }
   | { type: 'comment.deleted'; root: string; id: string }
   /** A "Send" press: all comments of one batch, delivered to waiting agents. */
-  | { type: 'batch.sent'; batchId: string; ids: string[] };
+  | { type: 'batch.sent'; batchId: string; ids: string[] }
+  /** A file opened in the viewer changed on disk; `path` is relative to `root`. */
+  | { type: 'file.changed'; root: string; path: string };
 
 export interface SentBatch {
   batchId: string;

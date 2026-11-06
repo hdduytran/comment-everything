@@ -15,7 +15,9 @@ export interface TestEnv {
 }
 
 /** Start a daemon on a random port with an isolated home and a registered project folder. */
-export async function createTestEnv(opts: { watch?: boolean } = {}): Promise<TestEnv> {
+export async function createTestEnv(
+  opts: { watch?: boolean; viewerDir?: string } = {},
+): Promise<TestEnv> {
   const base = await realpath(await mkdtemp(path.join(tmpdir(), 'ce-daemon-')));
   const home = path.join(base, 'home');
   const project = path.join(base, 'project');
@@ -25,7 +27,12 @@ export async function createTestEnv(opts: { watch?: boolean } = {}): Promise<Tes
   await writeFile(path.join(project, 'docs', 'guide.md'), '# Guide\n');
   await writeFile(path.join(base, 'secret.txt'), 'top secret');
 
-  const daemon = await startDaemon({ port: 0, home, watch: opts.watch ?? false });
+  const daemon = await startDaemon({
+    port: 0,
+    home,
+    watch: opts.watch ?? false,
+    viewerDir: opts.viewerDir,
+  });
   const reg = await daemon.registry.register(project);
   return {
     home,

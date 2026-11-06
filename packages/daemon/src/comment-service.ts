@@ -1,3 +1,4 @@
+import { randomUUID } from 'node:crypto';
 import { readFile } from 'node:fs/promises';
 import path from 'node:path';
 import {
@@ -152,6 +153,33 @@ export class CommentService implements CommentBackend {
     } catch {
       return null;
     }
+  }
+
+  /**
+   * Store an uploaded image under the `.comments/assets/` folder of a project root (`root`)
+   * or of the per-host data folder for a web URL (`source`). Returns the relative asset path.
+   */
+  async saveAsset(
+    target: { root?: string; source?: string },
+    data: Uint8Array,
+    ext: string,
+  ): Promise<string> {
+    let root: string;
+    if (target.source && isUrl(target.source)) {
+      root = (await this.registry.registerDataFolder(resolveStorageRoot(target.source, this.home)))
+        .root;
+    } else if (target.root) {
+      root = (
+        await this.registry.register(target.root).catch((e: unknown) => {
+          throw e instanceof RootRegistryError ? new ValidationError(e.message) : e;
+        })
+      ).root;
+    } else {
+      throw new ValidationError('root or an http(s) source is required');
+    }
+    const store = this.registry.storeFor(root);
+    if (!store) throw new ValidationError(`Root not registered: ${root}`);
+    return store.writeAsset(`${randomUUID()}.${ext}`, data);
   }
 
   waitForBatch(timeoutSec: number, signal?: AbortSignal): Promise<SentBatch | null> {
