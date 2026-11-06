@@ -18,6 +18,7 @@ Comment Everything lets you leave review comments on HTML files, Markdown files,
 - **Copy prompt**: produces a self-contained Markdown prompt to paste into any chat.
 - **Re-anchoring**: when the file changes, comments follow their text (fuzzy quote matching) and are flagged `orphaned` if the content is gone.
 - **Plain files**: one W3C Web Annotation style JSON file per comment in `<project>/.comments/`. Diffable, greppable, git-friendly.
+- **Typing is safe on any page**: keystrokes in the comment box never reach the page's own keyboard shortcuts, and the panel collapses to a small handle when it is in the way.
 - **Agent tools**: MCP tools `list_comments`, `get_comment`, `resolve_comment`, `set_status`, `wait_for_comments`.
 
 ## Quickstart
@@ -59,7 +60,37 @@ Then tell the agent: **"check my comments"**. It reads each comment, edits the r
 
 ## How Send reaches Claude
 
-Sending writes the comments to disk and queues a batch in the local daemon. There are three ways the agent picks it up:
+Pressing **Send** does not call Claude directly. It saves the comments and queues them in the local daemon; Claude picks them up through MCP.
+
+1. **Connect Claude once** (see Quickstart). The panel header shows who is connected: "Claude Code connected · watching", "Claude connected (will read on request)", or "No AI connected". Select it for copy-paste setup commands.
+2. **Press Send.** Comments are written to `<project>/.comments/` and queued as one batch.
+3. **Claude reads the batch**, depending on how it is connected:
+   - It is **watching** (`/comments-watch`, or a channel): it picks the batch up right away and the panel says "Sent — Claude is picking it up".
+   - It is **connected but not watching**: tell it "check my comments" or run `/comments`. The panel says so.
+   - **Nothing is connected**: the comments are saved, and the panel offers "How to connect". Connect later and ask Claude to check; nothing is lost.
+4. **Claude edits the file and resolves each comment.** The status chips in the panel update live.
+
+```mermaid
+sequenceDiagram
+  participant You
+  participant Panel as Panel (viewer / extension)
+  participant Daemon
+  participant Claude as Claude (MCP)
+
+  You->>Panel: Send
+  Panel->>Daemon: save comments, queue batch
+  Panel-->>You: Sent / Saved, and what to do next
+  alt Claude is watching
+    Daemon-->>Claude: wait_for_comments returns the batch
+  else Claude is connected, not watching
+    You->>Claude: /comments or "check my comments"
+    Claude->>Daemon: list_comments
+  end
+  Claude->>Daemon: resolve_comment(note)
+  Daemon-->>Panel: live status update
+```
+
+There are three ways the agent picks a batch up:
 
 | Mode                            | How                                                                                                                                   | Notes                                                       |
 | ------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------- |

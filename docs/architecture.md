@@ -99,16 +99,25 @@ What the daemon stores and exposes: comments (including text from web pages and 
 
 The sandboxed iframe loads the HTML from `/s/<token>/files/<root>/<file>` so relative URLs keep resolving. The token is therefore visible to the page's own scripts (`location.href`). What that allows: reading other files under the same registered root through the file route, and copying the token somewhere. What it does not allow: calling the REST API or MCP from a browser (the sandbox's `null` origin is accepted only for scoped file reads), or reaching the viewer page. Mitigation today is to open only HTML you trust and to run `comment-everything stop` when finished. A per-frame, file-scoped capability would remove the limitation.
 
+## Overlay isolation
+
+The overlay lives in a Shadow DOM, but shadow boundaries do not stop events: a keystroke typed in the comment box bubbles to `document` and `window`, where sites such as GitHub bind single-key shortcuts. `EventIsolation` (`packages/overlay/src/event-isolation.ts`) registers capture-phase listeners on `window` for keyboard, input, clipboard, IME and focus events and calls `stopImmediatePropagation()` when `composedPath()` includes the overlay host. It never calls `preventDefault()`, so typing and IME composition work. Because that also hides the event from the overlay's own listeners, the panel registers its handlers (draft text sync, Esc, Ctrl/Cmd+Enter) through `EventIsolation.listen()`, which runs them first.
+
+Limit: listeners the page registered on `window` in the capture phase _before_ the overlay was mounted run first and still see the keystroke. Mounting at `document_start` would close that gap.
+
+Element-pick mode swallows pointer, mouse, touch and click events on `window` in the capture phase for the same reason.
+
 ## Where state lives
 
-| Path                                           | Contents                                                            |
-| ---------------------------------------------- | ------------------------------------------------------------------- |
-| `<project>/.comments/<id>.json`                | Comments for files in the project (and for web pages mapped to it). |
-| `<project>/.comments/assets/`                  | Keyframes and screenshots.                                          |
-| `~/.comment-everything/token`                  | Per-install token (0600).                                           |
-| `~/.comment-everything/daemon.json`            | Pid, port, token and start time of the running daemon.              |
-| `~/.comment-everything/roots.json`             | Registered project roots.                                           |
-| `~/.comment-everything/paired-extensions.json` | Paired Chrome extension ids.                                        |
-| `~/.comment-everything/<host>/.comments/`      | Comments on web pages not mapped to a project.                      |
+| Path                                           | Contents                                                               |
+| ---------------------------------------------- | ---------------------------------------------------------------------- |
+| `<project>/.comments/<id>.json`                | Comments for files in the project (and for web pages mapped to it).    |
+| `<project>/.comments/assets/`                  | Keyframes and screenshots.                                             |
+| `~/.comment-everything/token`                  | Per-install token (0600).                                              |
+| `~/.comment-everything/daemon.json`            | Pid, port, token and start time of the running daemon.                 |
+| `~/.comment-everything/roots.json`             | Registered project roots.                                              |
+| `~/.comment-everything/paired-extensions.json` | Paired Chrome extension ids.                                           |
+| `~/.comment-everything/agents-seen.json`       | Whether any MCP client has ever connected (drives the first-run hint). |
+| `~/.comment-everything/<host>/.comments/`      | Comments on web pages not mapped to a project.                         |
 
 `COMMENT_EVERYTHING_HOME` replaces `~` for all of this (used by tests and sandboxes). `COMMENT_EVERYTHING_EXPORT_CLIPS=1` also exports each media range as an mp4 clip asset.

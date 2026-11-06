@@ -73,6 +73,18 @@ curl -s -X PATCH -H "x-ce-token: $TOKEN" -H 'content-type: application/json' \
 
 `GET /batches/next?timeoutSec=30` long-polls for the next **Send** batch: `200` with `{ batchId, comments }`, or `204` on timeout (`timeoutSec` is clamped to 1 to 600). A batch is claimed by exactly one caller. This is what `wait_for_comments` and the channel push use.
 
+## Agents (who is connected)
+
+The daemon records which MCP clients talk to it, so the viewer can tell you what happens after **Send**.
+
+| Route                | Description                                                                                                                                                                                                                                                                   |
+| -------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `GET /agents/status` | `{ connected: [{ name, version?, transport, watching, channel, lastSeenAt }], watching, everConnected }`. `name` is the client's own `clientInfo.name` (for example `claude-code`). `watching` is true while a client is blocked in `wait_for_comments` or uses channel push. |
+| `POST /agents/hello` | Used by the `mcp` stdio proxy after the MCP handshake and every 30 s: `{ id, name, version?, transport, channel? }`.                                                                                                                                                          |
+| `POST /agents/bye`   | `{ id }`. The proxy calls it when the client disconnects.                                                                                                                                                                                                                     |
+
+A stdio client counts as connected for 90 s after its last heartbeat; an HTTP `/mcp` client (told apart by `User-Agent`, since `/mcp` is stateless) for 10 minutes after its last call. Send the `x-ce-agent: <id>` header on `/batches/next` to count the caller as watching. `everConnected` is remembered in `~/.comment-everything/agents-seen.json`.
+
 ## Projects (roots)
 
 | Route                       | Description                                                                                                                                                                                                       |
@@ -85,12 +97,13 @@ curl -s -X PATCH -H "x-ce-token: $TOKEN" -H 'content-type: application/json' \
 
 `GET /events` streams events as `event: <type>` with a JSON `data` payload:
 
-| Event                                 | Payload                                             |
-| ------------------------------------- | --------------------------------------------------- |
-| `comment.created` / `comment.updated` | `{ type, root, comment }`                           |
-| `comment.deleted`                     | `{ type, root, id }`                                |
-| `batch.sent`                          | `{ type, batchId, ids }`                            |
-| `file.changed`                        | `{ type, root, path }` for files open in the viewer |
+| Event                                 | Payload                                                                                                                              |
+| ------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------ |
+| `comment.created` / `comment.updated` | `{ type, root, comment }`                                                                                                            |
+| `comment.deleted`                     | `{ type, root, id }`                                                                                                                 |
+| `batch.sent`                          | `{ type, batchId, ids }`                                                                                                             |
+| `file.changed`                        | `{ type, root, path }` for files open in the viewer                                                                                  |
+| `agents.changed`                      | `{ type, status }` where `status` is the `GET /agents/status` body; sent when a client connects, leaves, or starts or stops watching |
 
 Edits made directly to `.comments/*.json` files on disk are detected and published too.
 
