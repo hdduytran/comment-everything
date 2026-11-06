@@ -50,6 +50,9 @@ function formatComment(c: Comment, index: number): string {
     lines.push(`- Location: ${describeSelector(sel)}`);
     if (sel.type === 'TextQuoteSelector') lines.push(blockquote(sel.exact));
   }
+  if (c.anchorState === 'orphaned') {
+    lines.push('- Anchor: detached (the commented content no longer exists at this location)');
+  }
   lines.push('- Comment:', blockquote(c.text || '(no text)'));
   if (c.assets.length > 0) {
     lines.push('- Assets:', ...c.assets.map((a) => `  - \`.comments/${a}\``));

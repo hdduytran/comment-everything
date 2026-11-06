@@ -9,10 +9,14 @@ z.config({ jitless: true });
 
 export * from './selector-schemas.js';
 export * from './prompt-formatter.js';
+export * from './fuzzy-text-quote-matcher.js';
+export * from './reanchor-engine.js';
 export type {
   Comment,
   CommentInput,
   CommentPatch,
   CommentStatus,
+  AnchorState,
+  LastResolved,
   Transcript,
 } from './comment-schema.js';

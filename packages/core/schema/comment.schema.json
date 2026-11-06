@@ -259,6 +259,44 @@
       ],
       "additionalProperties": false
     },
+    "anchorState": {
+      "type": "string",
+      "enum": [
+        "ok",
+        "moved",
+        "orphaned"
+      ]
+    },
+    "lastResolved": {
+      "type": "object",
+      "properties": {
+        "start": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991
+        },
+        "end": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991
+        },
+        "startLine": {
+          "type": "integer",
+          "exclusiveMinimum": 0,
+          "maximum": 9007199254740991
+        },
+        "endLine": {
+          "type": "integer",
+          "exclusiveMinimum": 0,
+          "maximum": 9007199254740991
+        }
+      },
+      "required": [
+        "start",
+        "end"
+      ],
+      "additionalProperties": false
+    },
     "createdAt": {
       "type": "string",
       "format": "date-time",

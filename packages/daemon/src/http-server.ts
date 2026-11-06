@@ -16,6 +16,7 @@ import type { ProjectRootRegistry } from './project-root-registry.js';
 import { mountRestRoutes } from './rest-comment-routes.js';
 import { ScopeError, resolveScopedPath, serveFile } from './scoped-file-server.js';
 import type { FileChangeWatcher } from './file-change-watcher.js';
+import type { ReanchorOnFileChange } from './reanchor-on-file-change.js';
 import { VIEWER_ASSET_PREFIX, VIEWER_CSP, renderViewerPage } from './viewer-page.js';
 import { mountViewerAssets } from './viewer-assets-route.js';
 
@@ -31,6 +32,7 @@ export interface AppDeps extends GuardConfig {
   viewerDir?: string;
   /** Publishes `file.changed` for files opened in the viewer. */
   fileWatcher?: FileChangeWatcher;
+  reanchor?: ReanchorOnFileChange;
 }
 
 /** Query flag set by the viewer on its iframe so the daemon splices the frame agent into HTML. */
@@ -104,6 +106,7 @@ export function createApp(deps: AppDeps): Hono {
     c.header('Content-Security-Policy', VIEWER_CSP);
     const source = path.relative(root.root, real).split(path.sep).join('/');
     deps.fileWatcher?.watch(root.root, source);
+    await deps.reanchor?.prime(root.root, source);
     return c.html(
       renderViewerPage({ token: deps.token, rootId: root.id, root: root.root, source }),
     );

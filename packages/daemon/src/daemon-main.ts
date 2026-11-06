@@ -15,6 +15,7 @@ import {
 import { FileChangeWatcher } from './file-change-watcher.js';
 import { JobQueue } from './job-queue.js';
 import { MCP_SERVER_VERSION } from './mcp-server-tools.js';
+import { ReanchorOnFileChange } from './reanchor-on-file-change.js';
 import { ProjectRootRegistry } from './project-root-registry.js';
 import { defaultViewerDir } from './viewer-assets-route.js';
 
@@ -39,6 +40,7 @@ export interface RunningDaemon {
   registry: ProjectRootRegistry;
   service: CommentService;
   jobs: JobQueue;
+  reanchor: ReanchorOnFileChange;
   stop(): Promise<void>;
 }
 
@@ -75,6 +77,8 @@ export async function startDaemon(opts: StartDaemonOptions = {}): Promise<Runnin
   await registry.load();
 
   const fileWatcher = new FileChangeWatcher(bus);
+  const reanchor = new ReanchorOnFileChange(service, bus);
+  reanchor.start();
   let port = 0;
   const app = createApp({
     token,
@@ -87,6 +91,7 @@ export async function startDaemon(opts: StartDaemonOptions = {}): Promise<Runnin
     sandboxHtml: opts.sandboxHtml,
     viewerDir: opts.viewerDir ?? defaultViewerDir(),
     fileWatcher,
+    reanchor,
   });
 
   const server = await listen(app.fetch, opts.port ?? DEFAULT_PORT);
@@ -99,6 +104,7 @@ export async function startDaemon(opts: StartDaemonOptions = {}): Promise<Runnin
     if (!result.ok) {
       await closeServer(server);
       fileWatcher.close();
+      reanchor.stop();
       await registry.close();
       throw new DaemonAlreadyRunningError(result.existing);
     }
@@ -111,9 +117,11 @@ export async function startDaemon(opts: StartDaemonOptions = {}): Promise<Runnin
     registry,
     service,
     jobs,
+    reanchor,
     async stop() {
       if (useLock) await releaseLock(process.pid, home);
       fileWatcher.close();
+      reanchor.stop();
       await registry.close();
       await closeServer(server);
     },

@@ -75,6 +75,8 @@ export const SelectorSchema = z.discriminatedUnion('type', [
 
 export type Selector = z.infer<typeof SelectorSchema>;
 export type TextQuoteSelector = z.infer<typeof TextQuoteSelectorSchema>;
+export type CssSelector = z.infer<typeof CssSelectorSchema>;
+export type XPathSelector = z.infer<typeof XPathSelectorSchema>;
 export type LineRangeSelector = z.infer<typeof LineRangeSelectorSchema>;
 export type FragmentSelector = z.infer<typeof FragmentSelectorSchema>;
 export type ScreenshotSelector = z.infer<typeof ScreenshotSelectorSchema>;
