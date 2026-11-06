@@ -10,12 +10,15 @@ import type { KeyValueStore } from './key-value-store.js';
 import { SseFrameParser } from './sse-frame-parser.js';
 
 const TOKEN_HEADER = 'x-ce-token';
-const PROBE_TIMEOUT_MS = 2_000;
+const DEFAULT_PROBE_TIMEOUT_MS = 2_000;
 
 /** True when anything answers HTTP on the daemon port (a refusal or error status still counts). */
-export async function probeDaemon(port: number): Promise<boolean> {
+export async function probeDaemon(
+  port: number,
+  timeoutMs = DEFAULT_PROBE_TIMEOUT_MS,
+): Promise<boolean> {
   try {
-    await fetch(`${daemonBaseUrl(port)}/health`, { signal: AbortSignal.timeout(PROBE_TIMEOUT_MS) });
+    await fetch(`${daemonBaseUrl(port)}/health`, { signal: AbortSignal.timeout(timeoutMs) });
     return true;
   } catch {
     return false;

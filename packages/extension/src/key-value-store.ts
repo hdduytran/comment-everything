@@ -3,6 +3,8 @@ export interface KeyValueStore {
   get<T>(key: string): Promise<T | undefined>;
   set(key: string, value: unknown): Promise<void>;
   remove(key: string): Promise<void>;
+  /** Every stored key (used to find all locally saved comments). */
+  keys(): Promise<string[]>;
 }
 
 /** `chrome.storage.local` backed store (survives browser restarts, never synced). */
@@ -18,6 +20,9 @@ export function chromeLocalStore(): KeyValueStore {
     async remove(key) {
       await area.remove(key);
     },
+    async keys() {
+      return Object.keys(await area.get(null));
+    },
   };
 }
 
@@ -28,5 +33,6 @@ export function memoryStore(initial: Record<string, unknown> = {}): KeyValueStor
     get: async <T>(key: string) => data.get(key) as T | undefined,
     set: async (key, value) => void data.set(key, value),
     remove: async (key) => void data.delete(key),
+    keys: async () => [...data.keys()],
   };
 }

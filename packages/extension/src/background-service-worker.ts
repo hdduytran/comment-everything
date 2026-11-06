@@ -7,17 +7,36 @@ import {
   type WorkerRequest,
 } from './extension-messages.js';
 import { computeStatus } from './extension-status.js';
+import {
+  SHIELD_PREF_KEY,
+  rememberShieldOrigin,
+  syncEarlyShield,
+} from './early-shield-registration.js';
 import { chromeLocalStore } from './key-value-store.js';
+import { createIndexedDbAssetStore } from './local-asset-store.js';
 import { originOf, setMappedRoot } from './origin-to-project-mapping.js';
+import { handleStandaloneRequest } from './standalone-worker-handlers.js';
 
 const store = chromeLocalStore();
+const assets = createIndexedDbAssetStore();
 const INJECTOR_FILE = 'content-overlay-injector.js';
+
+/** Apply the early-shield settings; failures only cost the early shield, never the overlay. */
+const syncShield = () =>
+  syncEarlyShield(store, chrome).catch((err: unknown) =>
+    console.warn('[comment-everything] early shield not updated:', err),
+  );
 
 /** Toolbar button and keyboard shortcut: inject (or toggle off) the overlay in the tab. */
 async function toggleOverlay(tab: chrome.tabs.Tab | undefined): Promise<void> {
   if (tab?.id === undefined) return;
   try {
     await chrome.scripting.executeScript({ target: { tabId: tab.id }, files: [INJECTOR_FILE] });
+    const origin = originOf(tab.url ?? '');
+    if (origin) {
+      await rememberShieldOrigin(store, origin);
+      void syncShield();
+    }
   } catch (err) {
     // chrome:// pages, the Web Store and other restricted pages cannot be scripted.
     console.warn('[comment-everything] cannot comment on this page:', err);
@@ -47,6 +66,13 @@ async function handleRequest(
   sender: chrome.runtime.MessageSender,
 ): Promise<unknown> {
   const pageUrl = sender.tab?.url ?? '';
+  const standalone = await handleStandaloneRequest(req, {
+    store,
+    assets,
+    downloads: chrome.downloads,
+    openTab: (url) => chrome.tabs.create({ url }),
+  });
+  if (standalone) return standalone;
   switch (req.type) {
     case 'ce:status': {
       const origin = originOf(pageUrl);
@@ -105,3 +131,12 @@ chrome.runtime.onConnect.addListener((port) => {
     },
   );
 });
+
+// Early shield: re-sync when the user flips the option or grants / revokes site access.
+chrome.storage.onChanged.addListener((changes, area) => {
+  if (area === 'local' && SHIELD_PREF_KEY in changes) void syncShield();
+});
+chrome.permissions.onAdded.addListener(() => void syncShield());
+chrome.permissions.onRemoved.addListener(() => void syncShield());
+chrome.runtime.onStartup.addListener(() => void syncShield());
+chrome.runtime.onInstalled.addListener(() => void syncShield());

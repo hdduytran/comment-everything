@@ -4,7 +4,7 @@ import type { StatusReply } from './extension-messages.js';
 
 export const SERVE_HINT = 'npx comment-everything serve';
 
-type SetupStatus = Exclude<StatusReply, { state: 'ready' }>;
+type SetupStatus = Exclude<StatusReply, { state: 'ready' | 'standalone' }>;
 
 export interface SetupActions {
   retry(): void;

@@ -1,0 +1,23 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>Early capture listener</title>
+    <script>
+      // A site script that runs while the document loads and listens on window in the capture
+      // phase, before any extension code injected later (toolbar click) can get in front of it.
+      window.__fired = [];
+      for (const type of ['keydown', 'keypress', 'keyup', 'input', 'beforeinput']) {
+        window.addEventListener(
+          type,
+          (e) => window.__fired.push(type + ':' + (e.key ?? e.data ?? '')),
+          true,
+        );
+      }
+    </script>
+  </head>
+  <body>
+    <h1 id="title">Early capture listener</h1>
+    <p id="intro">The page registered its keyboard listeners before the overlay existed.</p>
+  </body>
+</html>

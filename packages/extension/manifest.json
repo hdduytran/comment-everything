@@ -2,18 +2,35 @@
   "manifest_version": 3,
   "name": "Comment Everything",
   "version": "0.1.0",
-  "description": "Comment on any web page and hand the comments to Claude Code or any MCP agent. Everything stays on your machine.",
+  "description": "Comment on any web page and hand the comments to Claude. Works on its own; add the local daemon for automatic Send. Nothing leaves your machine.",
   "minimum_chrome_version": "116",
-  "permissions": ["activeTab", "scripting", "storage"],
+  "permissions": ["activeTab", "downloads", "scripting", "storage"],
   "host_permissions": ["http://127.0.0.1:4317/*"],
-  "background": { "service_worker": "background-service-worker.js" },
-  "action": { "default_title": "Comment on this page" },
+  "optional_host_permissions": ["<all_urls>"],
+  "background": {
+    "service_worker": "background-service-worker.js"
+  },
+  "action": {
+    "default_title": "Comment on this page"
+  },
+  "options_ui": {
+    "page": "options-page.html",
+    "open_in_tab": true
+  },
   "commands": {
     "_execute_action": {
-      "suggested_key": { "default": "Alt+Shift+C" },
+      "suggested_key": {
+        "default": "Alt+Shift+C"
+      },
       "description": "Toggle the comment overlay on this tab"
     }
   },
-  "externally_connectable": { "matches": ["http://127.0.0.1/*"] },
-  "icons": { "16": "icons/icon-16.png", "48": "icons/icon-48.png", "128": "icons/icon-128.png" }
+  "externally_connectable": {
+    "matches": ["http://127.0.0.1/*"]
+  },
+  "icons": {
+    "16": "icons/icon-16.png",
+    "48": "icons/icon-48.png",
+    "128": "icons/icon-128.png"
+  }
 }
