@@ -1,0 +1,51 @@
+name: Bug report
+description: Something does not work as documented
+labels: [bug]
+body:
+  - type: textarea
+    id: what
+    attributes:
+      label: What happened
+      description: What you did, what you expected, what you got.
+    validations:
+      required: true
+  - type: dropdown
+    id: surface
+    attributes:
+      label: Where
+      options:
+        - HTML viewer
+        - Markdown viewer
+        - Video / audio viewer
+        - Chrome extension
+        - MCP tools / Claude integration
+        - CLI
+        - Other
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      description: Include a minimal file or page if you can. Do not paste tokens or private content.
+    validations:
+      required: true
+  - type: input
+    id: version
+    attributes:
+      label: comment-everything version
+      description: Output of `npx comment-everything --version`
+    validations:
+      required: true
+  - type: input
+    id: env
+    attributes:
+      label: Environment
+      description: OS, Node version, browser, agent (Claude Code / Desktop / other), ffmpeg or whisper if relevant
+    validations:
+      required: true
+  - type: textarea
+    id: logs
+    attributes:
+      label: Logs or screenshots
+      render: shell

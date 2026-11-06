@@ -6,7 +6,8 @@
   "description": "Playwright end-to-end tests that drive the built CLI, daemon and viewer in Chromium.",
   "scripts": {
     "e2e": "playwright test",
-    "typecheck": "tsc -p tsconfig.json"
+    "typecheck": "tsc -p tsconfig.json",
+    "record-demos": "node scripts/record-demos.mjs"
   },
   "devDependencies": {
     "@playwright/test": "^1.56.0",
