@@ -1,0 +1,4 @@
+dist
+pnpm-lock.yaml
+plans
+packages/core/schema

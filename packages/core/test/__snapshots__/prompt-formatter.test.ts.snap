@@ -1,0 +1,30 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`formatPrompt > matches the snapshot for the fixture comments 1`] = `
+"# Review comments (3)
+
+Address each comment below. Each one names the source file or URL, where in it the comment applies, and the reviewer's note.
+
+## 1. \`index.html\` (id: fixture-html-quote)
+- Location: CSS selector \`main > h1\`
+- Location: text quote
+> Welcome to our site
+- Comment:
+> Make this headline shorter.
+
+## 2. \`docs/guide.md\` (id: fixture-md-lines)
+- Location: lines 12-14
+- Comment:
+> This section is out of date.
+> Please rewrite it.
+
+## 3. \`media/demo.mp4\` (id: fixture-video-range)
+- Location: time 0:12.5 - 0:48.0
+- Comment:
+> Cut this part, the audio drops out.
+- Assets:
+  - \`.comments/assets/fixture-video-range-12.5.jpg\`
+- Transcript:
+> and then we, uh, restart the demo
+"
+`;

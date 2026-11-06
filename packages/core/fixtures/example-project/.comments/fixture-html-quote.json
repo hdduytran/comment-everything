@@ -1,0 +1,15 @@
+{
+  "schemaVersion": 1,
+  "id": "fixture-html-quote",
+  "source": "index.html",
+  "selectors": [
+    { "type": "CssSelector", "value": "main > h1" },
+    { "type": "TextQuoteSelector", "exact": "Welcome to our site", "prefix": "<h1>", "suffix": "</h1>" }
+  ],
+  "text": "Make this headline shorter.",
+  "status": "open",
+  "assets": [],
+  "createdAt": "2026-11-06T04:00:00.000Z",
+  "updatedAt": "2026-11-06T04:00:00.000Z",
+  "batchId": "batch-fixture-1"
+}

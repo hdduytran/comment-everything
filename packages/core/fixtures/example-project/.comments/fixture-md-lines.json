@@ -1,0 +1,13 @@
+{
+  "schemaVersion": 1,
+  "id": "fixture-md-lines",
+  "source": "docs/guide.md",
+  "selectors": [{ "type": "LineRangeSelector", "startLine": 12, "endLine": 14 }],
+  "text": "This section is out of date.\nPlease rewrite it.",
+  "status": "resolved",
+  "resolution": "Rewrote the section for v2.",
+  "assets": [],
+  "createdAt": "2026-11-06T04:01:00.000Z",
+  "updatedAt": "2026-11-06T04:05:00.000Z",
+  "batchId": "batch-fixture-1"
+}
