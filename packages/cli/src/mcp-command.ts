@@ -25,14 +25,14 @@ export async function mcpCommand(opts: { port?: number; channel?: boolean }): Pr
     );
   }
 
-  let server: ReturnType<typeof createMcpServer> | undefined;
+  // The presence reporter reads the client's identity lazily, after the MCP handshake.
   const presence = createAgentPresence(
     daemon,
-    () => server?.server.getClientVersion(),
+    () => server.server.getClientVersion(),
     !!opts.channel,
   );
   const backend = new HttpCommentBackend(daemon.url, daemon.token, presence.id);
-  server = createMcpServer(backend);
+  const server = createMcpServer(backend);
   if (opts.channel) enableChannelCapability(server);
   const closed = new Promise<void>((resolve) => {
     server.server.onclose = () => resolve();
@@ -40,7 +40,13 @@ export async function mcpCommand(opts: { port?: number; channel?: boolean }): Pr
   server.server.oninitialized = () => presence.start();
   await server.connect(new StdioServerTransport());
   const stopPush = opts.channel ? startChannelPush(server, backend) : undefined;
-  await closed;
+  // The client may end the session by closing stdin or signalling the process instead of a
+  // protocol-level close; either way the daemon should hear that this agent is gone.
+  const ended = new Promise<void>((resolve) => {
+    for (const signal of ['SIGTERM', 'SIGINT'] as const) process.once(signal, () => resolve());
+    process.stdin.once('end', () => resolve());
+  });
+  await Promise.race([closed, ended]);
   stopPush?.();
   await presence.stop();
   return 0;

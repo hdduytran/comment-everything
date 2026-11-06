@@ -127,3 +127,16 @@ describe('AgentActivityRegistry', () => {
     expect(seen.map((s) => s.watching)).toEqual([false, true, false]);
   });
 });
+
+describe('/mcp calls without a handshake', () => {
+  it('do not make a client "connected" by themselves', async () => {
+    const before = (await status()).connected.length;
+    const res = await env.api('/mcp', {
+      method: 'POST',
+      headers: { accept: 'application/json, text/event-stream', 'user-agent': 'raw-probe/1' },
+      body: JSON.stringify({ jsonrpc: '2.0', id: 1, method: 'tools/list' }),
+    });
+    expect(res.status).toBe(200);
+    expect((await status()).connected).toHaveLength(before);
+  });
+});

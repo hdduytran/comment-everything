@@ -35,13 +35,20 @@ function trackingBackend(
   backend: CommentBackend,
   agents: AgentActivityRegistry,
   id: string,
+  userAgent: string,
 ): CommentBackend {
   return {
     list: (f) => backend.list(f),
     get: (id2) => backend.get(id2),
     update: (id2, p) => backend.update(id2, p),
     readAsset: (id2, a) => backend.readAsset(id2, a),
-    waitForBatch: (sec, signal) => agents.trackWait(id, () => backend.waitForBatch(sec, signal)),
+    waitForBatch: (sec, signal) => {
+      // Waiting is proof of a client even when it skipped the handshake.
+      if (!agents.has(id)) {
+        agents.hello({ id, name: userAgent.split(/[/ ]/)[0] || 'MCP client', transport: 'http' });
+      }
+      return agents.trackWait(id, () => backend.waitForBatch(sec, signal));
+    },
   };
 }
 
@@ -65,14 +72,13 @@ export function mountMcpHttpEndpoint(
     if (agents) {
       const info = await readClientInfo(c.req.raw);
       if (info) agents.hello({ id, name: info.name, version: info.version, transport: 'http' });
-      else if (agents.has(id)) agents.touch(id);
-      else agents.hello({ id, name: ua.split(/[\/ ]/)[0] || 'MCP client', transport: 'http' });
+      else agents.touch(id); // calls without a handshake do not make a client "connected"
     }
     const transport = new WebStandardStreamableHTTPServerTransport({
       sessionIdGenerator: undefined,
       enableJsonResponse: true,
     });
-    const server = createMcpServer(agents ? trackingBackend(backend, agents, id) : backend);
+    const server = createMcpServer(agents ? trackingBackend(backend, agents, id, ua) : backend);
     await server.connect(transport);
     try {
       return await transport.handleRequest(c.req.raw);

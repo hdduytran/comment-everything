@@ -117,6 +117,82 @@ describe.skipIf(!existsSync(CLI))('comment-everything CLI (built binary)', () =>
     await client.close();
   });
 
+  it('mcp: reports the client to the daemon while connected and drops it on disconnect', async () => {
+    const lock = () =>
+      readFile(path.join(home, '.comment-everything', 'daemon.json'), 'utf8').then(
+        (raw) => JSON.parse(raw) as { port: number; token: string },
+      );
+    const status = async () => {
+      const { port, token } = await lock();
+      const res = await fetch(`http://127.0.0.1:${port}/agents/status`, {
+        headers: { 'x-ce-token': token },
+      });
+      return (await res.json()) as {
+        connected: { name: string; transport: string }[];
+        everConnected: boolean;
+      };
+    };
+    const client = new Client({ name: 'claude-code', version: '9.9' });
+    await client.connect(
+      new StdioClientTransport({
+        command: 'node',
+        args: [CLI, 'mcp', '--port', '0'],
+        env: env(),
+        cwd: project,
+      }),
+    );
+    await client.callTool({ name: 'list_comments', arguments: {} });
+    await expect
+      .poll(async () => (await status()).connected.map((c) => c.name), { timeout: 5000 })
+      .toContain('claude-code');
+    expect((await status()).everConnected).toBe(true);
+    await client.close();
+    await expect
+      .poll(async () => (await status()).connected.map((c) => c.name), { timeout: 5000 })
+      .not.toContain('claude-code');
+  });
+
+  it('open: prints the connect hint on stderr only until a client has connected', async () => {
+    const home2 = path.join(base, 'fresh-home');
+    await mkdir(home2, { recursive: true });
+    const env2 = { ...process.env, COMMENT_EVERYTHING_HOME: home2 } as Record<string, string>;
+    const open = () =>
+      spawnSync(
+        'node',
+        [CLI, 'open', path.join(project, 'page.html'), '--no-open', '--port', '0'],
+        {
+          encoding: 'utf8',
+          env: env2,
+          timeout: 15_000,
+        },
+      );
+    try {
+      const first = open();
+      expect(first.status).toBe(0);
+      expect(first.stderr).toContain('Next: connect Claude');
+      expect(first.stdout.trim().split('\n')).toHaveLength(1); // stdout stays just the URL
+
+      const lock = JSON.parse(
+        await readFile(path.join(home2, '.comment-everything', 'daemon.json'), 'utf8'),
+      ) as { port: number; token: string };
+      await fetch(`http://127.0.0.1:${lock.port}/agents/hello`, {
+        method: 'POST',
+        headers: { 'x-ce-token': lock.token, 'content-type': 'application/json' },
+        body: JSON.stringify({ id: 'stdio:t', name: 'claude-code', transport: 'stdio' }),
+      });
+      expect(open().stderr).not.toContain('Next: connect Claude');
+    } finally {
+      try {
+        const lock = JSON.parse(
+          await readFile(path.join(home2, '.comment-everything', 'daemon.json'), 'utf8'),
+        ) as { pid: number };
+        process.kill(lock.pid, 'SIGTERM');
+      } catch {
+        // daemon never started
+      }
+    }
+  });
+
   it('serve: a second serve reuses the running daemon instead of starting another', () => {
     const out = spawnSync('node', [CLI, 'serve', '--port', '0'], {
       encoding: 'utf8',
