@@ -8,6 +8,8 @@ import {
   tokenGuard,
   type GuardConfig,
 } from './auth-token-and-origin-guard.js';
+import type { AgentActivityRegistry } from './agent-activity-registry.js';
+import { mountAgentsRoutes } from './agents-routes.js';
 import { mountPairingRoutes } from './extension-pairing-route.js';
 import type { PairedExtensionStore } from './paired-extension-store.js';
 import { mountEventsRoute, type CommentEventBus } from './comment-events-sse.js';
@@ -40,6 +42,8 @@ export interface AppDeps extends GuardConfig {
   media?: MediaRouteDeps;
   /** Chrome extensions the user paired; their origins are the only extension origins allowed. */
   pairedExtensions: PairedExtensionStore;
+  /** MCP client tracking behind `/agents/status`; routes are skipped when absent. */
+  agents?: AgentActivityRegistry;
 }
 
 /** Query flag set by the viewer on its iframe so the daemon splices the frame agent into HTML. */
@@ -124,7 +128,8 @@ export function createApp(deps: AppDeps): Hono {
   mountViewerAssets(app, deps.viewerDir);
   mountEventsRoute(app, deps.bus);
   if (deps.media) mountMediaRoutes(app, deps.media);
+  if (deps.agents) mountAgentsRoutes(app, deps.agents);
   mountRestRoutes(app, deps);
-  mountMcpHttpEndpoint(app, deps.service);
+  mountMcpHttpEndpoint(app, deps.service, deps.agents);
   return app;
 }

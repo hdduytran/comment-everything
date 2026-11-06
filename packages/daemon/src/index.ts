@@ -25,3 +25,5 @@ export * from './scene-cut-detector.js';
 export * from './whisper-transcriber.js';
 export * from './paired-extension-store.js';
 export * from './extension-pairing-route.js';
+export * from './agent-activity-registry.js';
+export * from './agents-routes.js';

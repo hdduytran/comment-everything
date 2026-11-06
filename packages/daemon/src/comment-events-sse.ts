@@ -2,6 +2,7 @@ import { EventEmitter } from 'node:events';
 import type { Hono } from 'hono';
 import { streamSSE } from 'hono/streaming';
 import type { Comment } from '@comment-everything/core';
+import type { AgentsStatus } from './agent-activity-registry.js';
 
 export type CommentEvent =
   | { type: 'comment.created'; root: string; comment: Comment }
@@ -10,7 +11,9 @@ export type CommentEvent =
   /** A "Send" press: all comments of one batch, delivered to waiting agents. */
   | { type: 'batch.sent'; batchId: string; ids: string[] }
   /** A file opened in the viewer changed on disk; `path` is relative to `root`. */
-  | { type: 'file.changed'; root: string; path: string };
+  | { type: 'file.changed'; root: string; path: string }
+  /** An MCP client connected, left, or started/stopped waiting for comments. */
+  | { type: 'agents.changed'; status: AgentsStatus };
 
 export interface SentBatch {
   batchId: string;

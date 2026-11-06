@@ -1,10 +1,12 @@
 import { DEFAULT_PORT, DaemonAlreadyRunningError, startDaemon } from '@comment-everything/daemon';
+import { CONNECT_HINT } from './connect-hint.js';
 
 /** Run the daemon in the foreground until SIGINT/SIGTERM. Returns the process exit code. */
 export async function serveCommand(opts: { port?: number }): Promise<number> {
   try {
     const daemon = await startDaemon({ port: opts.port ?? DEFAULT_PORT });
     console.error(`comment-everything daemon listening on ${daemon.url} (pid ${process.pid})`);
+    if (!daemon.agents.status().everConnected) console.error(CONNECT_HINT);
     await new Promise<void>((resolve) => {
       const shutdown = () => {
         void daemon.stop().finally(resolve);

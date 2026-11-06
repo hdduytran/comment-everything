@@ -1,4 +1,5 @@
 import type { CommentPatch } from '@comment-everything/core';
+import { AGENT_HEADER } from './agents-routes.js';
 import { TOKEN_HEADER } from './auth-token-and-origin-guard.js';
 import type { AssetBlob, CommentBackend, CommentWithRoot, ListFilter } from './comment-service.js';
 import type { SentBatch } from './comment-events-sse.js';
@@ -8,11 +9,14 @@ export class HttpCommentBackend implements CommentBackend {
   constructor(
     private readonly baseUrl: string,
     private readonly token: string,
+    /** Identifies this proxy to the daemon's agent tracking (see `/agents/hello`). */
+    private readonly agentId?: string,
   ) {}
 
   private async request(pathAndQuery: string, init: RequestInit = {}): Promise<Response> {
     const headers = new Headers(init.headers);
     headers.set(TOKEN_HEADER, this.token);
+    if (this.agentId) headers.set(AGENT_HEADER, this.agentId);
     if (init.body) headers.set('Content-Type', 'application/json');
     return fetch(new URL(pathAndQuery, this.baseUrl), { ...init, headers });
   }

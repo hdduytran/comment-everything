@@ -1,6 +1,8 @@
 import type { Context, Hono } from 'hono';
 import { CommentPatchSchema, CommentStatusSchema } from '@comment-everything/core';
 import { z } from 'zod';
+import type { AgentActivityRegistry } from './agent-activity-registry.js';
+import { AGENT_HEADER } from './agents-routes.js';
 import { mountAssetUploadRoute } from './asset-upload-route.js';
 import { CreateBatchBodySchema, ValidationError, type CommentService } from './comment-service.js';
 import type { JobQueue } from './job-queue.js';
@@ -27,10 +29,11 @@ export interface RestDeps {
   service: CommentService;
   registry: ProjectRootRegistry;
   jobs: JobQueue;
+  agents?: AgentActivityRegistry;
 }
 
 /** Mount the JSON REST API (comments, batches, roots, jobs). */
-export function mountRestRoutes(app: Hono, { service, registry, jobs }: RestDeps): void {
+export function mountRestRoutes(app: Hono, { service, registry, jobs, agents }: RestDeps): void {
   app.post('/comments', async (c) => {
     const body = CreateBatchBodySchema.parse(await readJson(c));
     const batch = await service.createBatch(body);
@@ -67,7 +70,8 @@ export function mountRestRoutes(app: Hono, { service, registry, jobs }: RestDeps
   /** Long-poll for the next Send batch: 200 with the batch, or 204 on timeout. */
   app.get('/batches/next', async (c) => {
     const sec = Math.min(WAIT_MAX_SEC, Math.max(1, Number(c.req.query('timeoutSec') ?? 30) || 30));
-    const batch = await service.waitForBatch(sec, c.req.raw.signal);
+    const wait = () => service.waitForBatch(sec, c.req.raw.signal);
+    const batch = agents ? await agents.trackWait(c.req.header(AGENT_HEADER), wait) : await wait();
     return batch ? c.json(batch) : c.body(null, 204);
   });
 

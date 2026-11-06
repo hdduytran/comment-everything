@@ -2,6 +2,7 @@ import { findProjectRoot } from '@comment-everything/core';
 import { HttpCommentBackend, createMcpServer } from '@comment-everything/daemon';
 import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
 import { daemonRequest, ensureDaemon } from './daemon-launcher.js';
+import { createAgentPresence } from './agent-presence-reporter.js';
 import { enableChannelCapability, startChannelPush } from './mcp-channel-push.js';
 
 /**
@@ -24,15 +25,23 @@ export async function mcpCommand(opts: { port?: number; channel?: boolean }): Pr
     );
   }
 
-  const backend = new HttpCommentBackend(daemon.url, daemon.token);
-  const server = createMcpServer(backend);
+  let server: ReturnType<typeof createMcpServer> | undefined;
+  const presence = createAgentPresence(
+    daemon,
+    () => server?.server.getClientVersion(),
+    !!opts.channel,
+  );
+  const backend = new HttpCommentBackend(daemon.url, daemon.token, presence.id);
+  server = createMcpServer(backend);
   if (opts.channel) enableChannelCapability(server);
   const closed = new Promise<void>((resolve) => {
     server.server.onclose = () => resolve();
   });
+  server.server.oninitialized = () => presence.start();
   await server.connect(new StdioServerTransport());
   const stopPush = opts.channel ? startChannelPush(server, backend) : undefined;
   await closed;
   stopPush?.();
+  await presence.stop();
   return 0;
 }

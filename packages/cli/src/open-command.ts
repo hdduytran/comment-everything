@@ -2,6 +2,7 @@ import { spawn } from 'node:child_process';
 import { realpath, stat } from 'node:fs/promises';
 import path from 'node:path';
 import { findProjectRoot } from '@comment-everything/core';
+import { CONNECT_HINT } from './connect-hint.js';
 import { daemonRequest, ensureDaemon } from './daemon-launcher.js';
 
 /** Launch the platform's default browser for `url` without waiting for it. */
@@ -48,5 +49,10 @@ export async function openCommand(
   const url = `${daemon.url}/view?path=${encodeURIComponent(real)}`;
   console.log(url);
   if (!opts.noOpen) openInBrowser(url);
+  // stderr: stdout carries only the URL so scripts can read it.
+  const agents = await daemonRequest<{ everConnected: boolean }>(daemon, '/agents/status').catch(
+    () => null,
+  );
+  if (agents && !agents.everConnected) console.error(CONNECT_HINT);
   return { url, root };
 }

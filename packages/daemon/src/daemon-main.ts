@@ -1,5 +1,6 @@
 import { serve, type ServerType } from '@hono/node-server';
 import type { AddressInfo } from 'node:net';
+import { AgentActivityRegistry } from './agent-activity-registry.js';
 import { createApp } from './http-server.js';
 import { CommentEventBus } from './comment-events-sse.js';
 import { CommentService } from './comment-service.js';
@@ -49,6 +50,7 @@ export interface RunningDaemon {
   jobs: JobQueue;
   reanchor: ReanchorOnFileChange;
   pairedExtensions: PairedExtensionStore;
+  agents: AgentActivityRegistry;
   stop(): Promise<void>;
 }
 
@@ -91,6 +93,11 @@ export async function startDaemon(opts: StartDaemonOptions = {}): Promise<Runnin
   });
   const pairedExtensions = new PairedExtensionStore(home);
   await pairedExtensions.load();
+  const agents = new AgentActivityRegistry(home, (status) =>
+    bus.publish({ type: 'agents.changed', status }),
+  );
+  await agents.load();
+  agents.start();
   const fileWatcher = new FileChangeWatcher(bus);
   const reanchor = new ReanchorOnFileChange(service, bus);
   reanchor.start();
@@ -109,6 +116,7 @@ export async function startDaemon(opts: StartDaemonOptions = {}): Promise<Runnin
     reanchor,
     media,
     pairedExtensions,
+    agents,
   });
 
   const server = await listen(app.fetch, opts.port ?? DEFAULT_PORT);
@@ -122,6 +130,7 @@ export async function startDaemon(opts: StartDaemonOptions = {}): Promise<Runnin
       await closeServer(server);
       fileWatcher.close();
       reanchor.stop();
+      agents.stop();
       await registry.close();
       throw new DaemonAlreadyRunningError(result.existing);
     }
@@ -136,10 +145,12 @@ export async function startDaemon(opts: StartDaemonOptions = {}): Promise<Runnin
     jobs,
     reanchor,
     pairedExtensions,
+    agents,
     async stop() {
       if (useLock) await releaseLock(process.pid, home);
       fileWatcher.close();
       reanchor.stop();
+      agents.stop();
       await registry.close();
       await closeServer(server);
     },
