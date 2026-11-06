@@ -41,7 +41,13 @@ export function createOverlay(host: OverlayHost): OverlayHandle {
     }
     render();
   };
-  const agents = new AgentStatusTracker(host.daemon, () => render());
+  const agents: AgentStatusTracker = new AgentStatusTracker(host.daemon, () => {
+    // "Connect Claude" is stale once a client shows up.
+    if (state.message?.action === 'connect' && agents.current?.connected.length) {
+      state.message = null;
+    }
+    render();
+  });
 
   // The shadow host exists before the panel so event isolation can be installed around it.
   const { host: hostEl, shadow } = createShadowHost(doc, mountPoint, OVERLAY_CSS);
@@ -192,6 +198,7 @@ export function createOverlay(host: OverlayHost): OverlayHandle {
       offs.forEach((off) => off());
       clearTimeout(messageTimer);
       isolation.dispose();
+      panel.dispose();
       host.content.setMode(null);
       host.content.setPins([]);
       hostEl.remove();

@@ -8,9 +8,12 @@ let mountEl: HTMLElement;
 let handle: ReturnType<typeof createOverlay> | undefined;
 let content: ReturnType<typeof fakeContent>;
 let daemon: ReturnType<typeof fakeDaemon>['daemon'];
+let push: ReturnType<typeof fakeDaemon>['push'];
 beforeEach(() => {
   content = fakeContent();
-  daemon = fakeDaemon().daemon;
+  const fake = fakeDaemon();
+  daemon = fake.daemon;
+  push = fake.push;
   mountEl = document.createElement('div');
   document.body.append(mountEl);
   handle = createOverlay({ source: 'a.html', content: content.adapter, daemon, mount: mountEl });
@@ -124,5 +127,30 @@ describe('element picker', () => {
     expect(picked).toHaveBeenCalledWith(target);
     stop();
     target.remove();
+  });
+});
+
+describe('focus after Send', () => {
+  it('stays inside the panel when the focused text box is removed', async () => {
+    const box = area();
+    box.focus();
+    box.value = 'ok';
+    box.dispatchEvent(realEvent(Event, 'input'));
+    box.dispatchEvent(realEvent(KeyboardEvent, 'keydown', { key: 'Enter', ctrlKey: true }));
+    await tick();
+    expect(shadow().querySelector('textarea')).toBeNull();
+    expect(shadow().activeElement?.tagName).toBe('BUTTON');
+  });
+});
+
+describe('focus while typing', () => {
+  it('a re-render (live update) does not pull focus out of the text box', () => {
+    const box = area();
+    box.focus();
+    push({
+      type: 'agents.changed',
+      status: { connected: [], watching: false, everConnected: false },
+    });
+    expect(shadow().activeElement).toBe(box);
   });
 });

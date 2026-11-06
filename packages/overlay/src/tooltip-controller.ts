@@ -28,12 +28,20 @@ export class TooltipController {
   private shown: { tip: HTMLElement; target: HTMLElement } | null = null;
   private timer: ReturnType<typeof setTimeout> | undefined;
   private readonly handles = new Set<TooltipHandle>();
+  private readonly stopEsc: () => void;
 
   constructor(
     private readonly doc: Document,
     private readonly layer: HTMLElement,
     private readonly delayMs: number = TOOLTIP_DELAY_MS,
-  ) {}
+  ) {
+    // Esc dismisses a tooltip without moving the pointer or focus (WCAG 1.4.13). Keys typed inside
+    // the overlay are routed here by the panel's own handler; this covers the host page.
+    const onEsc = (e: KeyboardEvent) => e.key === 'Escape' && this.hide();
+    const win = doc.defaultView;
+    win?.addEventListener('keydown', onEsc, true);
+    this.stopEsc = () => win?.removeEventListener('keydown', onEsc, true);
+  }
 
   /** Describe `target` with a tooltip. */
   attach(target: HTMLElement, spec: TooltipSpec): TooltipHandle {
@@ -85,9 +93,9 @@ export class TooltipController {
     return handle;
   }
 
-  /** Hide the visible tooltip (Esc). Returns true when one was showing or pending. */
+  /** Hide the tooltip and cancel a pending one (Esc). Returns true only if one was visible. */
   hide(): boolean {
-    const had = this.shown !== null || this.timer !== undefined;
+    const had = this.shown !== null;
     clearTimeout(this.timer);
     this.timer = undefined;
     if (this.shown) this.shown.tip.hidden = true;
@@ -96,6 +104,7 @@ export class TooltipController {
   }
 
   dispose(): void {
+    this.stopEsc();
     this.hide();
     [...this.handles].forEach((h) => h.detach());
   }

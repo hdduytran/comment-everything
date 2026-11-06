@@ -39,7 +39,7 @@ export function fakeDaemon(status?: AgentsStatus) {
     schemaVersion: 1,
     id: `c${i + 1}`,
     source: c.source,
-    selectors: c.selectors,
+    selectors: (c.selectors ?? []) as Comment['selectors'],
     text: c.text,
     status: 'open',
     assets: [],

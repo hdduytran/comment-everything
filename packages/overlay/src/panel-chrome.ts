@@ -142,3 +142,35 @@ export function buildHeader(
   );
   return { header, agent, agentTip, collapse };
 }
+
+/** The small tab shown while the panel is collapsed; the badge carries the pending count. */
+export function buildHandle(
+  doc: Document,
+  tips: TooltipController,
+  open: () => void,
+): HTMLButtonElement {
+  const handle = el(doc, 'button', { type: 'button', class: 'handle', 'data-ce': 'handle' });
+  handle.append(icon(doc, 'chat'), el(doc, 'span', { class: 'badge', 'aria-hidden': 'true' }));
+  handle.addEventListener('click', open);
+  tips.attach(handle, { text: 'Open the comment panel.' });
+  return handle;
+}
+
+/** Status line under the content: message text plus an optional "How to connect" action. */
+export function buildToast(doc: Document, onConnect: () => void) {
+  const action = labelledButton(doc, 'How to connect', {
+    class: 'link',
+    'data-ce': 'toast-connect',
+  });
+  action.hidden = true;
+  action.addEventListener('click', onConnect);
+  const text = el(doc, 'span', { class: 'toast-text' });
+  const toast = el(
+    doc,
+    'div',
+    { class: 'toast', role: 'status', 'data-ce': 'toast' },
+    text,
+    action,
+  );
+  return { toast, text, action };
+}

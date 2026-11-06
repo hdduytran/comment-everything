@@ -170,3 +170,28 @@ describe('agent status text', () => {
     expect(describeSendOutcome(null, 2).text).toBe('Sent 2 comments.');
   });
 });
+
+describe('Esc priority', () => {
+  it('a tooltip that has not appeared yet does not swallow Esc meant for the capture mode', async () => {
+    const m = await mount();
+    const btn = q<HTMLButtonElement>('[data-ce=mode-element]');
+    btn.click();
+    btn.focus(); // schedules a tooltip, which has not shown yet
+    btn.dispatchEvent(realEvent(KeyboardEvent, 'keydown', { key: 'Escape' }));
+    expect(m.content.modes.at(-1)).toBeNull();
+  });
+});
+
+describe('tooltip dismissal from the page', () => {
+  it('Esc typed outside the overlay hides a visible tooltip', async () => {
+    await mount();
+    vi.useFakeTimers();
+    const send = q<HTMLElement>('[data-ce=send]');
+    const tip = root().getElementById(send.getAttribute('aria-describedby')!)!;
+    send.dispatchEvent(new MouseEvent('mouseenter'));
+    vi.advanceTimersByTime(450);
+    expect(tip.hidden).toBe(false);
+    document.body.dispatchEvent(realEvent(KeyboardEvent, 'keydown', { key: 'Escape' }));
+    expect(tip.hidden).toBe(true);
+  });
+});

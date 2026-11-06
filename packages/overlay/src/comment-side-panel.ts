@@ -5,11 +5,11 @@ import {
   SEND_TIP_EMPTY,
   buildFooter,
   buildHeader,
+  buildHandle,
   buildModeBar,
-  labelledButton,
+  buildToast,
 } from './panel-chrome.js';
 import type { CaptureMode } from './host-adapter.js';
-import { icon } from './icons.js';
 import { createDraftCard, type DraftCard } from './panel-draft-cards.js';
 import { SentList } from './panel-sent-list.js';
 import type { Draft } from './overlay-state.js';
@@ -60,27 +60,12 @@ export class SidePanel {
     this.sendTip = foot.sendTip;
     this.agentTip = head.agentTip;
 
-    const handle = el(d, 'button', { type: 'button', class: 'handle', 'data-ce': 'handle' });
-    handle.append(icon(d, 'chat'), el(d, 'span', { class: 'badge', 'aria-hidden': 'true' }));
-    handle.addEventListener('click', () => this.setCollapsed(false));
-    this.tips.attach(handle, { text: 'Open the comment panel.' });
+    const handle = buildHandle(d, this.tips, () => this.setCollapsed(false));
+    const toast = buildToast(d, () => this.openHelp());
     this.refs.handle = handle;
-
-    const toastAction = labelledButton(d, 'How to connect', {
-      class: 'link',
-      'data-ce': 'toast-connect',
-    });
-    toastAction.hidden = true;
-    toastAction.addEventListener('click', () => this.openHelp());
-    this.refs.toastAction = toastAction;
-    this.refs.toastText = el(d, 'span', { class: 'toast-text' });
-    this.refs.toast = el(
-      d,
-      'div',
-      { class: 'toast', role: 'status', 'data-ce': 'toast' },
-      this.refs.toastText,
-      toastAction,
-    );
+    this.refs.toast = toast.toast;
+    this.refs.toastText = toast.text;
+    this.refs.toastAction = toast.action;
 
     this.refs.empty = el(d, 'p', {
       class: 'empty',
@@ -173,6 +158,10 @@ export class SidePanel {
     this.refs.toast!.hidden = !m;
   }
 
+  dispose(): void {
+    this.tips.dispose();
+  }
+
   focusDraft(id: string): void {
     this.setCollapsed(false);
     this.cards.get(id)?.area.focus();
@@ -202,12 +191,18 @@ export class SidePanel {
   private syncDrafts(drafts: readonly Draft[]): void {
     this.refs.empty!.hidden = drafts.length > 0;
     const live = new Set(drafts.map((x) => x.id));
+    const active = (this.root.getRootNode() as Document | ShadowRoot).activeElement;
+    let lostFocus = false;
     for (const [id, c] of this.cards) {
       if (!live.has(id)) {
+        lostFocus ||= c.card.contains(active);
         c.card.remove();
         this.cards.delete(id);
       }
     }
+    // Removing the focused text box (after Send) would drop focus onto the host page, where
+    // keystrokes still in flight (key-up) would reach its shortcuts. Keep focus in the panel.
+    if (lostFocus) (this.modeButtons.values().next().value ?? this.refs.collapse!).focus();
     drafts.forEach((draft, i) => {
       let entry = this.cards.get(draft.id);
       if (!entry) {
@@ -216,8 +211,11 @@ export class SidePanel {
         this.areaIds.set(entry.area, draft.id);
       }
       entry.card.querySelector('.num')!.textContent = String(i + 1);
-      // Re-append keeps DOM order equal to model order without recreating textareas.
-      this.refs.drafts!.append(entry.card);
+      // Keep DOM order equal to model order without recreating textareas. Only move a card that
+      // is out of place: moving a node blurs it, and a render (e.g. an SSE update) must never
+      // pull focus out of the text box being typed in.
+      const at = this.refs.drafts!.children[i] ?? null;
+      if (at !== entry.card) this.refs.drafts!.insertBefore(entry.card, at);
     });
   }
 }
