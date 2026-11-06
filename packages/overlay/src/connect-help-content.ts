@@ -6,7 +6,7 @@ export interface HelpStep {
 }
 
 export interface HelpTab {
-  id: 'code' | 'desktop' | 'other';
+  id: 'standalone' | 'code' | 'desktop' | 'other';
   label: string;
   steps: HelpStep[];
 }
@@ -55,3 +55,31 @@ export const HELP_TABS: readonly HelpTab[] = [
     ],
   },
 ];
+
+/** First tab when the extension runs without a daemon. */
+export const STANDALONE_HELP_TAB: HelpTab = {
+  id: 'standalone',
+  label: 'Extension only',
+  steps: [
+    {
+      text: 'No install needed. Three ways to hand your comments to Claude:',
+    },
+    {
+      text: '1. Copy prompt: paste it into Claude Desktop, claude.ai or any chat. Screenshots come along where the app accepts pasted images.',
+    },
+    {
+      text: '2. Export: saves comments.md, comments.json and screenshots under Downloads/comment-everything/. Then tell Claude Code to read the comments.md it names.',
+    },
+    {
+      text: '3. Open in Claude: copies the prompt, then opens a blank claude.ai chat. Paste it there. Nothing is put in the address.',
+    },
+    {
+      text: 'Want Send to reach Claude by itself? Switch to daemon mode. Install the CLI:',
+      command: 'npm install -g comment-everything',
+    },
+    { text: 'Start it and leave it running:', command: 'comment-everything serve' },
+    {
+      text: 'Once it is running, this panel offers to pair with it. Comments saved here can then be moved to your project.',
+    },
+  ],
+};

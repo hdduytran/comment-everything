@@ -5,6 +5,7 @@ export {
   createInPageContentAdapter,
   type InPageAdapterOptions,
 } from './in-page-content-adapter.js';
+export { defaultCopyText } from './clipboard-copy.js';
 export { PANEL_WIDTH_PX } from './overlay-styles.js';
 export { DraftStore, buildPrompt, draftsToComments, type Draft } from './overlay-state.js';
 export {
@@ -30,3 +31,4 @@ export {
 export { TOOLTIP_CSS } from './tooltip-styles.js';
 export { tokensCss } from './overlay-tokens.js';
 export { icon, type IconName } from './icons.js';
+export { installEventShield } from './event-isolation.js';

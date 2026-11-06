@@ -1,4 +1,4 @@
-import { HELP_TABS, type HelpTab } from './connect-help-content.js';
+import { HELP_TABS as DEFAULT_TABS, type HelpTab } from './connect-help-content.js';
 import { el } from './dom-helpers.js';
 import { icon } from './icons.js';
 
@@ -18,7 +18,9 @@ export function createConnectHelpSheet(
   doc: Document,
   copy: (text: string) => Promise<void>,
   onClose: () => void,
+  opts: { tabs?: readonly HelpTab[]; intro?: string } = {},
 ): ConnectHelpSheet {
+  const defs = opts.tabs ?? DEFAULT_TABS;
   const tabs = new Map<HelpTab['id'], { tab: HTMLElement; panel: HTMLElement }>();
   const tablist = el(doc, 'div', {
     class: 'tabs',
@@ -62,7 +64,7 @@ export function createConnectHelpSheet(
     }, 1500);
   };
 
-  HELP_TABS.forEach((def, i) => {
+  defs.forEach((def, i) => {
     const tab = el(doc, 'button', {
       type: 'button',
       role: 'tab',
@@ -86,7 +88,7 @@ export function createConnectHelpSheet(
       const dir = ev.key === 'ArrowRight' ? 1 : ev.key === 'ArrowLeft' ? -1 : 0;
       if (!dir) return;
       ev.preventDefault();
-      select(HELP_TABS[(i + dir + HELP_TABS.length) % HELP_TABS.length]!.id, true);
+      select(defs[(i + dir + defs.length) % defs.length]!.id, true);
     });
     tabs.set(def.id, { tab, panel });
     tablist.append(tab);
@@ -107,19 +109,20 @@ export function createConnectHelpSheet(
     el(doc, 'div', { class: 'help-head' }, el(doc, 'h2', { text: 'Connect to Claude' }), back),
     el(doc, 'p', {
       class: 'muted',
-      text: 'Comments are saved either way. Connect Claude so it can read and fix them.',
+      text:
+        opts.intro ?? 'Comments are saved either way. Connect Claude so it can read and fix them.',
     }),
     tablist,
     panels,
   );
   root.hidden = true;
-  select('code');
+  select(defs[0]!.id);
 
   return {
     root,
     open() {
       root.hidden = false;
-      tabs.get('code')?.tab.focus();
+      tabs.get(defs[0]!.id)?.tab.focus();
     },
     close() {
       const was = !root.hidden;

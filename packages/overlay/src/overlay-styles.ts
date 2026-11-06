@@ -33,6 +33,7 @@ header{padding:12px 12px 10px;background:var(--ce-bg-subtle)}
 .agent-label{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .dot{flex:none;width:8px;height:8px;border-radius:50%;border:1.5px solid var(--ce-text-muted)}
 .agent[data-kind=connected] .dot{background:var(--ce-accent-text);border-color:var(--ce-accent-text)}
+.agent[data-kind=local] .dot{background:var(--ce-text-muted)}
 .agent[data-kind=watching] .dot{background:var(--ce-success-text);border-color:var(--ce-success-text)}
 .agent[data-kind=watching]{color:var(--ce-success-text);background:var(--ce-success-soft)}
 .modes{display:flex;gap:6px;padding:0 12px 12px;background:var(--ce-bg-subtle);border-bottom:1px solid var(--ce-border)}
@@ -50,6 +51,7 @@ button[aria-disabled=true]:active{transform:none}
 button.primary{flex:1;background:var(--ce-accent);border-color:var(--ce-accent);color:var(--ce-accent-fg)}
 button.primary:hover{background:var(--ce-accent-hover)}
 button.primary[aria-disabled=true]:hover{background:var(--ce-accent)}
+button.wide{flex:1 0 100%}
 button.danger{color:var(--ce-danger)}
 button.mode{flex:1}
 button.mode[aria-pressed=true]{background:var(--ce-accent-soft);border-color:var(--ce-accent);color:var(--ce-accent-text)}
@@ -58,10 +60,11 @@ button.icon-btn:hover{background:var(--ce-bg-hover);color:var(--ce-text)}
 button.link{height:auto;padding:0;border:0;background:none;color:var(--ce-accent-text);text-decoration:underline;text-underline-offset:2px}
 button.ghost{height:24px;border-color:transparent;background:transparent;color:var(--ce-text-muted)}
 button.agent:hover{background:var(--ce-bg-hover);filter:brightness(.97)}
-footer{display:flex;gap:6px;padding:10px 12px;border-top:1px solid var(--ce-border);background:var(--ce-bg-subtle)}
+footer{display:flex;flex-wrap:wrap;gap:6px;padding:10px 12px;border-top:1px solid var(--ce-border);background:var(--ce-bg-subtle)}
 .toast{display:flex;align-items:center;gap:8px;padding:8px 12px;border-top:1px solid var(--ce-border);background:var(--ce-bg-subtle);font-size:12px;color:var(--ce-text)}
 .toast.error{color:var(--ce-danger)}
 .toast-text{min-width:0;overflow-wrap:anywhere}
+.toast button{flex:none}
 @media (prefers-reduced-motion:reduce){button{transition:none}}
 `;
 

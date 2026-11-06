@@ -1,14 +1,14 @@
 import { createConnectHelpSheet, type ConnectHelpSheet } from './connect-help-sheet.js';
 import { el } from './dom-helpers.js';
 import {
-  SEND_TIP,
-  SEND_TIP_EMPTY,
   buildFooter,
   buildHeader,
   buildHandle,
   buildModeBar,
-  buildToast,
+  sendTipText,
 } from './panel-chrome.js';
+import { buildOffer } from './panel-offer.js';
+import { PanelToast } from './panel-toast.js';
 import type { CaptureMode } from './host-adapter.js';
 import { createDraftCard, type DraftCard } from './panel-draft-cards.js';
 import { SentList } from './panel-sent-list.js';
@@ -28,6 +28,11 @@ export class SidePanel {
   private readonly sentList: SentList;
   private readonly help: ConnectHelpSheet;
   private readonly refs: Record<string, HTMLElement>;
+  private readonly extraButtons: HTMLButtonElement[];
+  private readonly offer: ReturnType<typeof buildOffer> | null;
+  private readonly primaryLabel: string;
+  private readonly primaryTip: string | undefined;
+  private readonly toast: PanelToast;
   private sendTip!: TooltipHandle;
   private agentTip!: TooltipHandle;
   private collapsed = false;
@@ -45,7 +50,10 @@ export class SidePanel {
       actions.setMode(wasOn ? null : mode),
     );
     this.modeButtons = buttons;
-    const foot = buildFooter(d, this.tips, modKeyLabel(d.defaultView), actions);
+    const foot = buildFooter(d, this.tips, modKeyLabel(d.defaultView), actions, options.delivery);
+    this.extraButtons = foot.extra;
+    this.primaryLabel = options.delivery?.primary.label ?? 'Send';
+    this.primaryTip = foot.primaryTip;
     const head = buildHeader(d, this.tips, {
       help: () => this.openHelp(),
       collapse: () => this.setCollapsed(true),
@@ -61,11 +69,11 @@ export class SidePanel {
     this.agentTip = head.agentTip;
 
     const handle = buildHandle(d, this.tips, () => this.setCollapsed(false));
-    const toast = buildToast(d, () => this.openHelp());
     this.refs.handle = handle;
-    this.refs.toast = toast.toast;
-    this.refs.toastText = toast.text;
-    this.refs.toastAction = toast.action;
+    this.toast = new PanelToast(d, this.tips, options.copyText, () => this.openHelp());
+    this.offer = options.offer
+      ? buildOffer(d, this.tips, options.offer, () => actions.runOffer())
+      : null;
 
     this.refs.empty = el(d, 'p', {
       class: 'empty',
@@ -74,10 +82,23 @@ export class SidePanel {
         'Nothing pending. Choose Element, Text or Region, then click the page.',
     });
     this.refs.drafts = el(d, 'div', { 'data-ce': 'drafts' });
-    this.refs.sentTitle = el(d, 'h3', { text: 'Sent' });
+    this.refs.sentTitle = el(d, 'h3', { text: options.delivery ? 'Saved' : 'Sent' });
     this.refs.sent = el(d, 'div', { 'data-ce': 'sent' });
-    this.sentList = new SentList(d, this.refs.sent, this.tips);
-    this.help = createConnectHelpSheet(d, options.copyText, () => this.closeHelp());
+    this.sentList = new SentList(
+      d,
+      this.refs.sent,
+      this.tips,
+      options.editSaved
+        ? {
+            setStatus: (id, st) => actions.setStatus(id, st),
+            remove: (id) => actions.removeSaved(id),
+          }
+        : undefined,
+    );
+    this.help = createConnectHelpSheet(d, options.copyText, () => this.closeHelp(), {
+      tabs: options.helpTabs,
+      intro: options.helpIntro,
+    });
 
     const aside = el(
       d,
@@ -96,7 +117,8 @@ export class SidePanel {
         this.refs.sent,
       ),
       this.help.root,
-      this.refs.toast,
+      ...(this.offer ? [this.offer.root] : []),
+      this.toast.root,
       foot.footer,
     );
     this.root = el(d, 'div', { class: 'shell' }, aside, handle, tipLayer);
@@ -129,12 +151,16 @@ export class SidePanel {
     const n = model.drafts.length;
     const setOn = (key: string, on: boolean) =>
       this.refs[key]!.setAttribute('aria-disabled', String(!on));
-    this.refs.send!.querySelector('span')!.textContent = n > 0 ? `Send (${n})` : 'Send';
+    this.refs.send!.querySelector('span')!.textContent =
+      n > 0 ? `${this.primaryLabel} (${n})` : this.primaryLabel;
     setOn('send', n > 0 && !model.busy);
     setOn('copy', n > 0);
     setOn('clear', n > 0 && !model.busy);
+    for (const b of this.extraButtons)
+      b.setAttribute('aria-disabled', String(n === 0 || model.busy));
+    if (this.offer) this.offer.button.setAttribute('aria-disabled', String(model.busy));
     this.sendTip.update({
-      text: n > 0 ? SEND_TIP : SEND_TIP_EMPTY,
+      text: sendTipText(this.options.delivery?.primary.label, n > 0, this.primaryTip),
       shortcut: `${modKeyLabel(this.doc.defaultView)}+Enter`,
     });
     this.refs.handle!.setAttribute(
@@ -150,16 +176,16 @@ export class SidePanel {
       agent.querySelector('.agent-label')!.textContent = model.agents.label;
       this.agentTip.update({ text: model.agents.tip });
     }
-    const m = model.message;
-    this.refs.toastText!.textContent = m?.text ?? '';
-    this.refs.toastAction!.hidden = m?.action !== 'connect';
-    this.refs.toast!.classList.toggle('error', m?.error === true);
-    this.refs.toast!.setAttribute('role', m?.error ? 'alert' : 'status');
-    this.refs.toast!.hidden = !m;
+    this.toast.update(model.message);
   }
 
   dispose(): void {
     this.tips.dispose();
+  }
+
+  /** Hide the offer strip once it has been acted on. */
+  hideOffer(): void {
+    if (this.offer) this.offer.root.hidden = true;
   }
 
   focusDraft(id: string): void {

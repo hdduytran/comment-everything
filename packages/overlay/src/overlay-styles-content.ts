@@ -20,6 +20,11 @@ textarea:focus{border-color:var(--ce-accent)}
 .sent .text{margin-top:6px;white-space:pre-wrap;overflow-wrap:anywhere}
 .sent .note{margin-top:6px;padding:6px 8px;border-radius:var(--ce-radius);background:var(--ce-success-soft);color:var(--ce-success-text);
   font-size:12px;white-space:pre-wrap;overflow-wrap:anywhere}
+.sent-actions{margin-top:6px;gap:4px}
+.sent-actions .ghost{padding:0 6px}
+.offer{display:flex;align-items:center;gap:8px;padding:8px 12px;border-top:1px solid var(--ce-border);background:var(--ce-accent-soft);color:var(--ce-accent-text);font-size:12px}
+.offer-text{flex:1;min-width:0;overflow-wrap:anywhere}
+.offer button{flex:none}
 .chip{flex:none;display:inline-flex;align-items:center;gap:5px;height:20px;padding:0 8px;border-radius:99px;font-size:11px;font-weight:600;
   background:var(--ce-bg-hover);color:var(--ce-text-muted)}
 .chip::before{content:"";width:6px;height:6px;border-radius:50%;background:currentColor}

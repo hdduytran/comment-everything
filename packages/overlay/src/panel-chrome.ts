@@ -1,6 +1,7 @@
 import { el } from './dom-helpers.js';
 import { icon, type IconName } from './icons.js';
 import type { CaptureMode } from './host-adapter.js';
+import type { PanelOptions } from './panel-types.js';
 import type { TooltipController, TooltipHandle } from './tooltip-controller.js';
 
 /** Builders for the panel's static chrome: header, mode bar, footer. Behaviour stays in SidePanel. */
@@ -27,6 +28,12 @@ const MODES: { mode: CaptureMode; label: string; icon: IconName; tip: string }[]
 ];
 export const SEND_TIP = 'Save these comments and hand them to Claude, all at once.';
 export const SEND_TIP_EMPTY = 'Nothing to send yet. Add a comment first.';
+
+/** Tooltip for the primary button; `label` is set only for a standalone host's own action. */
+export function sendTipText(label: string | undefined, hasDrafts: boolean, own?: string): string {
+  if (!label) return hasDrafts ? SEND_TIP : SEND_TIP_EMPTY;
+  return hasDrafts && own ? own : `Nothing to ${label.toLowerCase()} yet. Add a comment first.`;
+}
 
 export function labelledButton(
   doc: Document,
@@ -85,9 +92,16 @@ export function buildFooter(
   doc: Document,
   tips: TooltipController,
   mod: string,
-  on: { send(): void; copy(): void; clear(): void },
+  on: { send(): void; copy(): void; clear(): void; deliver(id: string): void },
+  delivery?: PanelOptions['delivery'],
 ) {
-  const send = labelledButton(doc, 'Send', { class: 'primary', 'data-ce': 'send' }, 'send');
+  const primary = delivery?.primary;
+  const send = labelledButton(
+    doc,
+    primary?.label ?? 'Send',
+    { class: 'primary', 'data-ce': 'send' },
+    primary ? 'download' : 'send',
+  );
   const copy = labelledButton(doc, 'Copy prompt', { 'data-ce': 'copy' });
   const clear = labelledButton(doc, 'Clear', { class: 'danger', 'data-ce': 'clear' });
   const guard = (b: HTMLElement, fn: () => void) =>
@@ -96,14 +110,27 @@ export function buildFooter(
   guard(copy, on.copy);
   guard(clear, on.clear);
   const sendTip: TooltipHandle = tips.attach(send, {
-    text: SEND_TIP_EMPTY,
+    text: sendTipText(primary?.label, false),
     shortcut: `${mod}+Enter`,
   });
   tips.attach(copy, {
     text: 'Copy the pending comments as a prompt you can paste into any AI chat.',
   });
   tips.attach(clear, { text: 'Discard all pending comments. Comments already sent are kept.' });
-  return { footer: el(doc, 'footer', {}, send, copy, clear), send, copy, clear, sendTip };
+  // Extra delivery buttons wrap onto their own row: four buttons do not fit side by side.
+  const extra = (delivery?.secondary ?? []).map((action) => {
+    const b = labelledButton(
+      doc,
+      action.label,
+      { class: 'wide', 'data-ce': `delivery-${action.id}` },
+      'external',
+    );
+    guard(b, () => on.deliver(action.id));
+    tips.attach(b, { text: action.tip });
+    return b;
+  });
+  const footer = el(doc, 'footer', {}, send, copy, clear, ...extra);
+  return { footer, send, copy, clear, extra, sendTip, primaryTip: primary?.tip };
 }
 
 /** Title row (help, collapse) plus the Claude connection indicator. */
@@ -154,23 +181,4 @@ export function buildHandle(
   handle.addEventListener('click', open);
   tips.attach(handle, { text: 'Open the comment panel.' });
   return handle;
-}
-
-/** Status line under the content: message text plus an optional "How to connect" action. */
-export function buildToast(doc: Document, onConnect: () => void) {
-  const action = labelledButton(doc, 'How to connect', {
-    class: 'link',
-    'data-ce': 'toast-connect',
-  });
-  action.hidden = true;
-  action.addEventListener('click', onConnect);
-  const text = el(doc, 'span', { class: 'toast-text' });
-  const toast = el(
-    doc,
-    'div',
-    { class: 'toast', role: 'status', 'data-ce': 'toast' },
-    text,
-    action,
-  );
-  return { toast, text, action };
 }

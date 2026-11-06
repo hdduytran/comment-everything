@@ -99,6 +99,11 @@ export function draftsToComments(
 }
 
 /** The self-contained Markdown prompt for the pending drafts ("Copy prompt"). */
-export function buildPrompt(drafts: readonly Draft[], source: string, now?: Date): string {
-  return formatPrompt(draftsToComments(drafts, source, now));
+export function buildPrompt(
+  drafts: readonly Draft[],
+  source: string,
+  now?: Date,
+  assetPrefix?: string,
+): string {
+  return formatPrompt(draftsToComments(drafts, source, now), { assetPrefix });
 }

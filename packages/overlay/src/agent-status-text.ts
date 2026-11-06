@@ -2,7 +2,7 @@ import type { AgentClientSummary, AgentsStatus } from './host-adapter.js';
 
 /** What the connection indicator in the panel header shows. */
 export interface AgentIndicator {
-  kind: 'watching' | 'connected' | 'none';
+  kind: 'watching' | 'connected' | 'none' | 'local';
   label: string;
   tip: string;
 }

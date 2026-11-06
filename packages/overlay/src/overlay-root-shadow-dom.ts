@@ -4,8 +4,11 @@ import { describeAgents, describeSendOutcome } from './agent-status-text.js';
 import { defaultCopyText } from './clipboard-copy.js';
 import { SidePanel, type PanelModel } from './comment-side-panel.js';
 import { EventIsolation } from './event-isolation.js';
+import { STANDALONE_HELP_TAB, HELP_TABS } from './connect-help-content.js';
 import { createShadowHost } from './dom-helpers.js';
 import type { CaptureMode, OverlayHandle, OverlayHost } from './host-adapter.js';
+import { createDeliveryActions } from './overlay-delivery.js';
+import { createSavedActions } from './overlay-saved-actions.js';
 import { OVERLAY_CSS } from './overlay-styles.js';
 import { DraftStore, buildPrompt } from './overlay-state.js';
 
@@ -28,12 +31,18 @@ export function createOverlay(host: OverlayHost): OverlayHandle {
   let pinsKey = '';
   let messageTimer: ReturnType<typeof setTimeout> | undefined;
   const copyText = (text: string) => host.copyText?.(text) ?? defaultCopyText(doc, text);
+  const delivery = host.delivery;
 
-  /** Routine confirmations fade after a while; errors and calls to action stay until replaced. */
-  const say = (text: string, error = false, action?: 'connect') => {
+  /** Routine confirmations fade after a while; errors, calls to action and copyable text stay. */
+  const say = (
+    text: string,
+    error = false,
+    action?: 'connect',
+    copy?: NonNullable<PanelModel['message']>['copy'],
+  ) => {
     clearTimeout(messageTimer);
-    state.message = { text, error, ...(action ? { action } : {}) };
-    if (!error && !action) {
+    state.message = { text, error, ...(action ? { action } : {}), ...(copy ? { copy } : {}) };
+    if (!error && !action && !copy) {
       messageTimer = setTimeout(() => {
         state.message = null;
         render();
@@ -54,7 +63,35 @@ export function createOverlay(host: OverlayHost): OverlayHandle {
   hostEl.dataset.cePanel = 'open';
   const isolation = new EventIsolation(hostEl, doc.defaultView ?? window);
 
-  const panel = new SidePanel(
+  const standalone = delivery
+    ? createDeliveryActions({
+        host,
+        delivery,
+        store,
+        sent,
+        say,
+        setBusy: (busy) => {
+          state.busy = busy;
+          render();
+        },
+        focusDraft: (id) => panel.focusDraft(id),
+      })
+    : null;
+  const editSaved = Boolean(host.daemon.updateStatus && host.daemon.deleteComment);
+  const savedActions = createSavedActions({
+    host,
+    sent,
+    say,
+    render: () => render(),
+    setBusy: (busy) => {
+      state.busy = busy;
+      render();
+    },
+    hideOffer: () => panel.hideOffer(),
+    reload: () => refresh(),
+  });
+
+  const panel: SidePanel = new SidePanel(
     doc,
     {
       setMode(mode) {
@@ -78,14 +115,15 @@ export function createOverlay(host: OverlayHost): OverlayHandle {
       },
       async copy() {
         try {
-          const text = buildPrompt(store.drafts, host.source, host.now?.());
-          await copyText(text);
+          if (standalone) await standalone.copy(copyText);
+          else await copyText(buildPrompt(store.drafts, host.source, host.now?.()));
           say('Prompt copied to clipboard.');
         } catch (err) {
           say(`Copy failed: ${(err as Error).message}`, true);
         }
       },
       async send() {
+        if (standalone) return standalone.send();
         const empty = store.drafts.find((d) => d.text.trim() === '');
         if (empty) {
           say('Write a comment for every pin before sending.', true);
@@ -109,8 +147,15 @@ export function createOverlay(host: OverlayHost): OverlayHandle {
           say(`Send failed: ${(err as Error).message}`, true);
         }
       },
+      deliver: (id) => void standalone?.deliver(id),
+      ...savedActions,
     },
     {
+      delivery,
+      offer: host.offer,
+      editSaved,
+      helpTabs: delivery ? [STANDALONE_HELP_TAB, ...HELP_TABS] : undefined,
+      helpIntro: delivery ? 'Comments stay in this browser until you hand them over.' : undefined,
       modes: host.content.modes,
       emptyHint: host.content.emptyHint,
       isolation,
@@ -126,7 +171,9 @@ export function createOverlay(host: OverlayHost): OverlayHandle {
       sent: [...sent.values()],
       busy: state.busy,
       message: state.message,
-      agents: describeAgents(agents.current),
+      agents: delivery
+        ? { kind: 'local', label: delivery.mode.label, tip: delivery.mode.tip }
+        : describeAgents(agents.current),
     });
     const pins = store.pins();
     const key = JSON.stringify(pins);

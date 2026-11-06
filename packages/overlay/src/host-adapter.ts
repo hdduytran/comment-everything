@@ -1,4 +1,9 @@
-import type { Comment, CommentInput, Selector } from '@comment-everything/core/browser';
+import type {
+  Comment,
+  CommentInput,
+  CommentStatus,
+  Selector,
+} from '@comment-everything/core/browser';
 
 /**
  * The host-adapter contract. The overlay UI never touches page content or the daemon directly:
@@ -91,8 +96,55 @@ export interface DaemonTransport {
   listComments(): Promise<Comment[]>;
   /** Optional: connected AI agents. When absent the panel shows no connection indicator. */
   agentsStatus?(): Promise<AgentsStatus>;
+  /** Optional: let the user change a saved comment's status (standalone hosts). */
+  updateStatus?(id: string, status: CommentStatus): Promise<Comment>;
+  /** Optional: let the user delete a saved comment (standalone hosts). */
+  deleteComment?(id: string): Promise<void>;
   /** Live events (SSE). The first subscriber opens the stream, the last one closes it. */
   subscribe(handler: (event: DaemonEvent) => void): Unsubscribe;
+}
+
+/** What a delivery action tells the user when it finishes. */
+export interface DeliveryOutcome {
+  text: string;
+  /** Shown with a copy button in the toast (e.g. a sentence to paste into an agent). */
+  copy?: { text: string; tip: string };
+}
+
+/** One button that hands comments to an AI without a daemon (export, open Claude, ...). */
+export interface DeliveryAction {
+  /** Stable key, used as `data-ce="delivery-<id>"`. */
+  id: string;
+  label: string;
+  tip: string;
+  /** The primary action receives the saved batch; secondary actions receive a snapshot of the pending drafts. */
+  run(comments: Comment[]): Promise<DeliveryOutcome>;
+}
+
+/**
+ * Replaces "Send" for hosts with no daemon to push to. Additive: omitted by the viewer and by
+ * the extension in daemon mode, whose UI stays unchanged.
+ */
+export interface DeliveryConfig {
+  /** Connection pill content (the host has no agent connection to describe). */
+  mode: { label: string; tip: string };
+  /** Replaces Send: the pending drafts are saved through `daemon.sendBatch`, then this runs. */
+  primary: DeliveryAction;
+  /** Extra buttons next to "Copy prompt". */
+  secondary?: DeliveryAction[];
+  /** Replaces the plain-text clipboard write of "Copy prompt" (e.g. rich text with images). */
+  copyPrompt?(prompt: string, comments: Comment[]): Promise<void>;
+  /** Prefix for asset paths in the prompt (default `.comments/`). */
+  assetPrefix?: string;
+}
+
+/** A one-time call to action shown above the footer (e.g. "Move 3 local comments to the project"). */
+export interface OverlayOffer {
+  text: string;
+  actionLabel: string;
+  actionTip: string;
+  /** Resolves to the confirmation text; the offer disappears on success and stays on failure. */
+  run(): Promise<string>;
 }
 
 export interface OverlayHost {
@@ -106,6 +158,9 @@ export interface OverlayHost {
   copyText?: (text: string) => Promise<void>;
   /** Clock for prompt timestamps (tests). */
   now?: () => Date;
+  /** Standalone delivery (no daemon). When set, Send is replaced by `delivery.primary`. */
+  delivery?: DeliveryConfig;
+  offer?: OverlayOffer;
 }
 
 export interface OverlayHandle {
