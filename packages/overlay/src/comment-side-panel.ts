@@ -50,12 +50,13 @@ export class SidePanel {
   constructor(
     private readonly doc: Document,
     private readonly actions: PanelActions,
+    options: { modes?: readonly CaptureMode[]; emptyHint?: string } = {},
   ) {
     const d = doc;
     const button = (text: string, attrs: Record<string, string>) =>
       el(d, 'button', { text, type: 'button', ...attrs });
     const modes = el(d, 'div', { class: 'modes' });
-    for (const m of MODES) {
+    for (const m of MODES.filter((x) => options.modes?.includes(x.mode) ?? true)) {
       const b = button(m.label, { title: m.title, 'data-ce': `mode-${m.mode}` });
       b.addEventListener('click', () =>
         actions.setMode(b.classList.contains('active') ? null : m.mode),
@@ -66,7 +67,9 @@ export class SidePanel {
     this.draftsEl = el(d, 'div', { 'data-ce': 'drafts' });
     this.emptyEl = el(d, 'p', {
       class: 'empty',
-      text: 'Pick an element, select text or drag a region, then write your comment.',
+      text:
+        options.emptyHint ??
+        'Pick an element, select text or drag a region, then write your comment.',
     });
     this.sentEl = el(d, 'div', { 'data-ce': 'sent' });
     this.sentTitle = el(d, 'h3', { text: 'Sent' });
@@ -83,7 +86,7 @@ export class SidePanel {
       'aside',
       { class: 'panel', 'data-ce': 'panel' },
       el(d, 'header', {}, el(d, 'strong', { text: 'Comment Everything' })),
-      modes,
+      ...(this.modeButtons.size > 0 ? [modes] : []),
       el(
         d,
         'div',

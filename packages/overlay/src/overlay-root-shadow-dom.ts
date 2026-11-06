@@ -44,50 +44,54 @@ export function createOverlay(host: OverlayHost): OverlayHandle {
     render();
   };
 
-  const panel = new SidePanel(doc, {
-    setMode(mode) {
-      state.mode = mode;
-      host.content.setMode(mode);
-      render();
-    },
-    editDraft: (id, text) => store.setText(id, text),
-    removeDraft: (id) => store.remove(id),
-    focusDraft: (id) => host.content.focusPin(id),
-    clear: () => {
-      store.clear();
-      say('Cleared pending comments.');
-    },
-    async copy() {
-      try {
-        const text = buildPrompt(store.drafts, host.source, host.now?.());
-        await (host.copyText?.(text) ?? defaultCopyText(doc, text));
-        say('Prompt copied to clipboard.');
-      } catch (err) {
-        say(`Copy failed: ${(err as Error).message}`, true);
-      }
-    },
-    async send() {
-      const empty = store.drafts.find((d) => d.text.trim() === '');
-      if (empty) {
-        say('Write a comment for every pin before sending.', true);
-        panel.focusDraft(empty.id);
-        return;
-      }
-      state.busy = true;
-      say('Sending…');
-      try {
-        const batch = await host.daemon.sendBatch(store.toInputs(host.source));
-        for (const c of batch.comments) sent.set(c.id, c);
-        const count = batch.comments.length;
+  const panel = new SidePanel(
+    doc,
+    {
+      setMode(mode) {
+        state.mode = mode;
+        host.content.setMode(mode);
+        render();
+      },
+      editDraft: (id, text) => store.setText(id, text),
+      removeDraft: (id) => store.remove(id),
+      focusDraft: (id) => host.content.focusPin(id),
+      clear: () => {
         store.clear();
-        state.busy = false;
-        say(`Sent ${count} comment${count === 1 ? '' : 's'}.`);
-      } catch (err) {
-        state.busy = false;
-        say(`Send failed: ${(err as Error).message}`, true);
-      }
+        say('Cleared pending comments.');
+      },
+      async copy() {
+        try {
+          const text = buildPrompt(store.drafts, host.source, host.now?.());
+          await (host.copyText?.(text) ?? defaultCopyText(doc, text));
+          say('Prompt copied to clipboard.');
+        } catch (err) {
+          say(`Copy failed: ${(err as Error).message}`, true);
+        }
+      },
+      async send() {
+        const empty = store.drafts.find((d) => d.text.trim() === '');
+        if (empty) {
+          say('Write a comment for every pin before sending.', true);
+          panel.focusDraft(empty.id);
+          return;
+        }
+        state.busy = true;
+        say('Sending…');
+        try {
+          const batch = await host.daemon.sendBatch(store.toInputs(host.source));
+          for (const c of batch.comments) sent.set(c.id, c);
+          const count = batch.comments.length;
+          store.clear();
+          state.busy = false;
+          say(`Sent ${count} comment${count === 1 ? '' : 's'}.`);
+        } catch (err) {
+          state.busy = false;
+          say(`Send failed: ${(err as Error).message}`, true);
+        }
+      },
     },
-  });
+    { modes: host.content.modes, emptyHint: host.content.emptyHint },
+  );
 
   function render(): void {
     panel.update({

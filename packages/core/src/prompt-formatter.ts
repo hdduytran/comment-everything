@@ -1,10 +1,19 @@
 import type { Comment } from './comment-schema.js';
 import { parseMediaFragment, type Selector } from './selector-schemas.js';
 
-function formatTime(sec: number): string {
-  const m = Math.floor(sec / 60);
-  const s = (sec - m * 60).toFixed(1).padStart(4, '0');
-  return `${m}:${s}`;
+/** `mm:ss.mmm` (minutes keep growing past 99, e.g. `120:05.250`). */
+export function formatTimecode(sec: number): string {
+  const totalMs = Math.round(Math.max(0, sec) * 1000);
+  const m = Math.floor(totalMs / 60_000);
+  const s = ((totalMs % 60_000) / 1000).toFixed(3).padStart(6, '0');
+  return `${String(m).padStart(2, '0')}:${s}`;
+}
+
+/** `00:12.400–00:15.000`, or a single timecode for a point comment. */
+function formatTimeRange(t: { start: number; end?: number }): string {
+  return t.end === undefined || t.end === t.start
+    ? formatTimecode(t.start)
+    : `${formatTimecode(t.start)}\u2013${formatTimecode(t.end)}`;
 }
 
 /** Quote a block of text as a Markdown blockquote, preserving line breaks. */
@@ -33,9 +42,7 @@ export function describeSelector(sel: Selector): string {
     case 'FragmentSelector': {
       const t = parseMediaFragment(sel);
       if (!t) return `fragment ${sel.value}`;
-      return t.end === undefined
-        ? `time ${formatTime(t.start)}`
-        : `time ${formatTime(t.start)} - ${formatTime(t.end)}`;
+      return `time ${formatTimeRange(t)}`;
     }
     case 'ScreenshotSelector': {
       const { x, y, width, height } = sel.rect;
@@ -45,7 +52,11 @@ export function describeSelector(sel: Selector): string {
 }
 
 function formatComment(c: Comment, index: number): string {
-  const lines: string[] = [`## ${index}. \`${c.source}\` (id: ${c.id})`];
+  const range = c.selectors.flatMap((s) =>
+    s.type === 'FragmentSelector' ? [parseMediaFragment(s)] : [],
+  )[0];
+  const where = range ? `${c.source} @ ${formatTimeRange(range)}` : c.source;
+  const lines: string[] = [`## ${index}. \`${where}\` (id: ${c.id})`];
   for (const sel of c.selectors) {
     lines.push(`- Location: ${describeSelector(sel)}`);
     if (sel.type === 'TextQuoteSelector') lines.push(blockquote(sel.exact));

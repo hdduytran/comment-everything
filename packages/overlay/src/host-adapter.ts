@@ -34,6 +34,10 @@ export interface PinSpec {
 
 /** Everything the overlay needs from the commented content. */
 export interface ContentAdapter {
+  /** Capture modes to offer in the panel (default: all three). Media adapters offer none. */
+  readonly modes?: readonly CaptureMode[];
+  /** Text shown while no comment is pending (default: the element/text/region hint). */
+  readonly emptyHint?: string;
   /** Start a capture mode (null stops capturing). Only one mode is active at a time. */
   setMode(mode: CaptureMode | null): void;
   onAnchor(cb: (anchor: Anchor) => void): Unsubscribe;
