@@ -45,4 +45,4 @@ export interface EventFrame {
 }
 
 /** Daemon paths a page may reach through the worker (everything else is refused). */
-export const PROXIED_PATH = /^\/(?:comments|roots)(?:[/?]|$)/;
+export const PROXIED_PATH = /^\/(?:comments|roots|agents\/status)(?:[/?]|$)/;
