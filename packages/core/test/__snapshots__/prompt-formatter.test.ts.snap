@@ -18,8 +18,8 @@ Address each comment below. Each one names the source file or URL, where in it t
 > This section is out of date.
 > Please rewrite it.
 
-## 3. \`media/demo.mp4\` (id: fixture-video-range)
-- Location: time 0:12.5 - 0:48.0
+## 3. \`media/demo.mp4 @ 00:12.500–00:48.000\` (id: fixture-video-range)
+- Location: time 00:12.500–00:48.000
 - Comment:
 > Cut this part, the audio drops out.
 - Assets:

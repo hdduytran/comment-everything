@@ -68,6 +68,9 @@ function assertRelativeSource(source: string): void {
 }
 
 export class CommentService implements CommentBackend {
+  /** Called after a Send batch is stored and published (e.g. to queue media post-processing). */
+  onBatchCreated?: (batch: SentBatch) => void;
+
   constructor(
     readonly registry: ProjectRootRegistry,
     readonly bus: CommentEventBus,
@@ -109,6 +112,12 @@ export class CommentService implements CommentBackend {
       this.bus.publish({ type: 'comment.created', root: c.root, comment: c });
     const batch: SentBatch = { batchId, comments: created };
     this.bus.sendBatch(batch);
+    try {
+      this.onBatchCreated?.(batch);
+    } catch (err) {
+      // Post-processing must never fail the Send itself; the comments are already saved.
+      console.error('[comment-everything] batch hook failed:', err);
+    }
     return batch;
   }
 

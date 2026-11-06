@@ -11,6 +11,7 @@ import {
 import { mountEventsRoute, type CommentEventBus } from './comment-events-sse.js';
 import { ValidationError, type CommentService } from './comment-service.js';
 import type { JobQueue } from './job-queue.js';
+import { mountMediaRoutes, type MediaRouteDeps } from './media-routes.js';
 import { mountMcpHttpEndpoint } from './mcp-http-endpoint.js';
 import type { ProjectRootRegistry } from './project-root-registry.js';
 import { mountRestRoutes } from './rest-comment-routes.js';
@@ -33,6 +34,8 @@ export interface AppDeps extends GuardConfig {
   /** Publishes `file.changed` for files opened in the viewer. */
   fileWatcher?: FileChangeWatcher;
   reanchor?: ReanchorOnFileChange;
+  /** Enables the `/media/*` helper routes (thumbnails, scene cuts, tool availability). */
+  media?: MediaRouteDeps;
 }
 
 /** Query flag set by the viewer on its iframe so the daemon splices the frame agent into HTML. */
@@ -114,6 +117,7 @@ export function createApp(deps: AppDeps): Hono {
 
   mountViewerAssets(app, deps.viewerDir);
   mountEventsRoute(app, deps.bus);
+  if (deps.media) mountMediaRoutes(app, deps.media);
   mountRestRoutes(app, deps);
   mountMcpHttpEndpoint(app, deps.service);
   return app;

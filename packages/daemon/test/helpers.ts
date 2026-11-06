@@ -2,7 +2,7 @@ import http from 'node:http';
 import { mkdir, mkdtemp, realpath, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
-import { startDaemon, type RunningDaemon } from '../src/index.js';
+import { startDaemon, type MediaTools, type RunningDaemon } from '../src/index.js';
 
 export interface TestEnv {
   home: string;
@@ -16,7 +16,7 @@ export interface TestEnv {
 
 /** Start a daemon on a random port with an isolated home and a registered project folder. */
 export async function createTestEnv(
-  opts: { watch?: boolean; viewerDir?: string } = {},
+  opts: { watch?: boolean; viewerDir?: string; mediaTools?: () => MediaTools } = {},
 ): Promise<TestEnv> {
   const base = await realpath(await mkdtemp(path.join(tmpdir(), 'ce-daemon-')));
   const home = path.join(base, 'home');
@@ -32,6 +32,7 @@ export async function createTestEnv(
     home,
     watch: opts.watch ?? false,
     viewerDir: opts.viewerDir,
+    mediaTools: opts.mediaTools,
   });
   const reg = await daemon.registry.register(project);
   return {

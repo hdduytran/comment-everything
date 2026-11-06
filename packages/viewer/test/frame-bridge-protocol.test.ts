@@ -59,7 +59,7 @@ describe('viewer router', () => {
     expect(viewerKindFor('page.htm')).toBe('html');
     expect(viewerKindFor('README.md')).toBe('markdown');
     expect(viewerKindFor('notes.markdown')).toBe('markdown');
-    expect(viewerKindFor('clip.mp4')).toBe('unsupported');
+    expect(viewerKindFor('clip.mp4')).toBe('video');
     expect(viewerKindFor('Makefile')).toBe('unsupported');
   });
 });

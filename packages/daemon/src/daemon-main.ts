@@ -14,6 +14,8 @@ import {
 } from './daemon-lockfile.js';
 import { FileChangeWatcher } from './file-change-watcher.js';
 import { JobQueue } from './job-queue.js';
+import { mediaCacheDir, setupMedia } from './media-job-queue.js';
+import type { MediaTools } from './media-binaries.js';
 import { MCP_SERVER_VERSION } from './mcp-server-tools.js';
 import { ReanchorOnFileChange } from './reanchor-on-file-change.js';
 import { ProjectRootRegistry } from './project-root-registry.js';
@@ -31,6 +33,10 @@ export interface StartDaemonOptions {
   viewerDir?: string;
   /** Write/replace the lockfile (default true). */
   useLockfile?: boolean;
+  /** Override ffmpeg/whisper discovery (tests). */
+  mediaTools?: () => MediaTools;
+  /** Also export each media range as an mp4 clip asset (default false). */
+  exportClips?: boolean;
 }
 
 export interface RunningDaemon {
@@ -76,6 +82,11 @@ export async function startDaemon(opts: StartDaemonOptions = {}): Promise<Runnin
   wiring.service = service;
   await registry.load();
 
+  const media = setupMedia(service, jobs, {
+    tools: opts.mediaTools,
+    exportClips: opts.exportClips ?? process.env.COMMENT_EVERYTHING_EXPORT_CLIPS === '1',
+    cacheDir: mediaCacheDir(home),
+  });
   const fileWatcher = new FileChangeWatcher(bus);
   const reanchor = new ReanchorOnFileChange(service, bus);
   reanchor.start();
@@ -92,6 +103,7 @@ export async function startDaemon(opts: StartDaemonOptions = {}): Promise<Runnin
     viewerDir: opts.viewerDir ?? defaultViewerDir(),
     fileWatcher,
     reanchor,
+    media,
   });
 
   const server = await listen(app.fetch, opts.port ?? DEFAULT_PORT);
