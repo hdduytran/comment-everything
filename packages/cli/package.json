@@ -1,0 +1,32 @@
+{
+  "name": "comment-everything",
+  "version": "0.1.0",
+  "description": "Comment on HTML, Markdown, web pages and media, then hand the comments to Claude Code or any MCP agent.",
+  "license": "MIT",
+  "type": "module",
+  "bin": {
+    "comment-everything": "./dist/cli.js"
+  },
+  "files": [
+    "dist"
+  ],
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "build": "tsup",
+    "test": "vitest run",
+    "typecheck": "tsc -p tsconfig.json"
+  },
+  "dependencies": {
+    "@hono/node-server": "^2.1.0",
+    "@modelcontextprotocol/sdk": "^1.32.0",
+    "chokidar": "^4.0.3",
+    "hono": "^4.10.0",
+    "zod": "^4.1.0"
+  },
+  "devDependencies": {
+    "@comment-everything/core": "workspace:*",
+    "@comment-everything/daemon": "workspace:*"
+  }
+}

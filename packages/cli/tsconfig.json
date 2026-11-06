@@ -1,0 +1,10 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "paths": {
+      "@comment-everything/core": ["../core/src/index.ts"],
+      "@comment-everything/daemon": ["../daemon/src/index.ts"]
+    }
+  },
+  "include": ["src", "test"]
+}
