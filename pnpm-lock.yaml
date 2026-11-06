@@ -107,6 +107,8 @@ importers:
         specifier: ^26.1.0
         version: 26.1.0
 
+  packages/plugin: {}
+
   packages/viewer:
     dependencies:
       '@comment-everything/core':

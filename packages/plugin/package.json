@@ -1,0 +1,12 @@
+{
+  "name": "@comment-everything/claude-plugin",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Claude Code plugin: MCP server config, skill and slash commands for Comment Everything.",
+  "license": "MIT",
+  "type": "module",
+  "scripts": {
+    "test": "vitest run",
+    "typecheck": "tsc -p tsconfig.json"
+  }
+}

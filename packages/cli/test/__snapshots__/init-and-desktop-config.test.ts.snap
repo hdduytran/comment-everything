@@ -1,0 +1,56 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`init > prints stable setup instructions 1`] = `
+"Connect your AI agent to comment-everything
+
+Claude Code (plugin: MCP server + skill + /comments and /comments-watch)
+    /plugin marketplace add <owner>/comment-everything
+    /plugin install comment-everything@comment-everything
+
+Claude Code (MCP server only)
+    claude mcp add comment-everything -- npx -y comment-everything mcp
+
+  Optional push (research preview, interactive sessions only): sent comments appear in the
+  session without asking Claude to wait. Register the channel variant and start Claude with:
+    claude mcp add comment-everything-channel -- npx -y comment-everything mcp --channel
+    claude --dangerously-load-development-channels server:comment-everything-channel
+
+Claude Desktop (<DESKTOP_CONFIG>)
+  Add this to the file, keeping any servers already there, then restart Claude Desktop
+  (or run: comment-everything init --write-desktop-config):
+    {
+      "mcpServers": {
+        "comment-everything": {
+          "command": "npx",
+          "args": [
+            "-y",
+            "comment-everything",
+            "mcp"
+          ]
+        }
+      }
+    }
+  Desktop is pull-based: say "check my comments".
+
+Cursor (.cursor/mcp.json in the project, or ~/.cursor/mcp.json)
+    {
+      "mcpServers": {
+        "comment-everything": {
+          "command": "npx",
+          "args": [
+            "-y",
+            "comment-everything",
+            "mcp"
+          ]
+        }
+      }
+    }
+
+Codex (~/.codex/config.toml)
+    [mcp_servers.comment-everything]
+    command = "npx"
+    args = ["-y", "comment-everything", "mcp"]
+
+Then run: comment-everything open <file>, add comments and press Send.
+"
+`;

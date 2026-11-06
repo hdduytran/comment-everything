@@ -1,0 +1,12 @@
+{
+  "name": "comment-everything",
+  "description": "Comment on files, pages and media, then let your agent act on the comments.",
+  "owner": { "name": "Comment Everything" },
+  "plugins": [
+    {
+      "name": "comment-everything",
+      "source": "./packages/plugin",
+      "description": "MCP server, skill and /comments commands for processing review comments."
+    }
+  ]
+}

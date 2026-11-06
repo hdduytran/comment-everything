@@ -1,0 +1,9 @@
+{
+  "name": "comment-everything",
+  "displayName": "Comment Everything",
+  "version": "0.1.0",
+  "description": "Process review comments left on HTML, Markdown, web pages and media: the agent reads the anchored comments, edits the files, and resolves them.",
+  "author": { "name": "Comment Everything" },
+  "license": "MIT",
+  "keywords": ["review", "comments", "annotations", "mcp"]
+}
