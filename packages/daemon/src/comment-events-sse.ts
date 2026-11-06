@@ -23,19 +23,34 @@ export interface SentBatch {
 const MAX_PENDING_BATCHES = 100;
 
 /**
+ * How long after an agent last waited it still counts as "watching". Covers the gap
+ * between two `wait_for_comments` calls while the agent works on the previous batch.
+ */
+export const WATCH_GRACE_MS = 120_000;
+
+/**
  * In-process hub for live updates. Fans comment events out to SSE clients and holds
- * sent-but-unclaimed batches so `wait_for_comments` never misses a Send that happened
- * while no agent was waiting.
+ * sent-but-unclaimed batches for agents that are watching, so a Send made while the
+ * agent is busy with the previous batch is not missed. Batches sent while nobody is
+ * watching are not queued: a later watcher must not receive stale work (the comments
+ * stay on disk and `list_comments` still returns them).
  */
 export class CommentEventBus {
   private readonly emitter = new EventEmitter();
   private readonly pending: SentBatch[] = [];
-  /** id -> updatedAt last published, to drop file-watcher echoes of our own writes. */
-  private readonly lastSeen = new Map<string, string>();
+  private activeWaiters = 0;
+  private lastWaitAt = Number.NEGATIVE_INFINITY;
 
-  constructor() {
+  constructor(private readonly now: () => number = Date.now) {
     this.emitter.setMaxListeners(0);
   }
+
+  /** True while an agent is waiting, or waited within the grace period. */
+  isWatching(): boolean {
+    return this.activeWaiters > 0 || this.now() - this.lastWaitAt <= WATCH_GRACE_MS;
+  }
+  /** id -> updatedAt last published, to drop file-watcher echoes of our own writes. */
+  private readonly lastSeen = new Map<string, string>();
 
   subscribe(listener: (e: CommentEvent) => void): () => void {
     this.emitter.on('event', listener);
@@ -56,8 +71,10 @@ export class CommentEventBus {
 
   /** Queue a batch for agents and notify SSE listeners. */
   sendBatch(batch: SentBatch): void {
-    this.pending.push(batch);
-    if (this.pending.length > MAX_PENDING_BATCHES) this.pending.shift();
+    if (this.isWatching()) {
+      this.pending.push(batch);
+      if (this.pending.length > MAX_PENDING_BATCHES) this.pending.shift();
+    }
     this.publish({
       type: 'batch.sent',
       batchId: batch.batchId,
@@ -71,10 +88,16 @@ export class CommentEventBus {
    * Resolves null on timeout or abort. A claimed batch is removed from the queue.
    */
   nextBatch(timeoutMs: number, signal?: AbortSignal): Promise<SentBatch | null> {
+    // A watcher arriving after the grace period starts fresh: anything queued then is stale.
+    if (!this.isWatching()) this.pending.length = 0;
+    this.lastWaitAt = this.now();
     const ready = this.pending.shift();
     if (ready) return Promise.resolve(ready);
+    this.activeWaiters++;
     return new Promise((resolve) => {
       const finish = (value: SentBatch | null) => {
+        this.activeWaiters--;
+        this.lastWaitAt = this.now();
         clearTimeout(timer);
         this.emitter.off('batch', onBatch);
         signal?.removeEventListener('abort', onAbort);

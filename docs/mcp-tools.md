@@ -60,7 +60,7 @@ Block until the user presses **Send**, then return that batch (same format as `l
 | ------------ | ------------------------- | ----------- |
 | `timeoutSec` | number 1 to 600, optional | Default 30. |
 
-On timeout it returns the text "No new comments were sent before the timeout."; call it again to keep waiting. A batch is delivered once: batches sent while nobody is waiting are queued (up to 100) and returned by the next call. Several waiters each get a different batch.
+On timeout it returns the text "No new comments were sent before the timeout."; call it again to keep waiting. A batch is delivered once, and only to an agent that is watching. A batch sent while the agent is busy between two calls (within 2 minutes of its last wait) is queued, up to 100, and returned by the next call. Batches sent while nobody was watching are not queued, so a new watcher never receives old work; those comments stay on disk and `list_comments` (or `/comments`) still returns them. Several waiters each get a different batch.
 
 ## Resource
 
