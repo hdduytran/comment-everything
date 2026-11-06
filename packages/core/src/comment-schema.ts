@@ -1,4 +1,3 @@
-import { randomUUID } from 'node:crypto';
 import { z } from 'zod';
 import { SelectorSchema } from './selector-schemas.js';
 
@@ -74,11 +73,11 @@ export const CommentPatchSchema = z
 export type CommentPatch = z.infer<typeof CommentPatchSchema>;
 
 export function newCommentId(): string {
-  return randomUUID();
+  return globalThis.crypto.randomUUID();
 }
 
 export function newBatchId(): string {
-  return `batch-${randomUUID()}`;
+  return `batch-${globalThis.crypto.randomUUID()}`;
 }
 
 /** Build a full comment from client input. `now`/`id` are injectable for tests. */

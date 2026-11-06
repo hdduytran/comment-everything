@@ -11,7 +11,11 @@
       "types": "./dist/index.d.ts",
       "import": "./dist/index.js"
     },
-    "./schema/comment.schema.json": "./schema/comment.schema.json"
+    "./schema/comment.schema.json": "./schema/comment.schema.json",
+    "./browser": {
+      "types": "./dist/browser.d.ts",
+      "import": "./dist/browser.js"
+    }
   },
   "files": [
     "dist",
