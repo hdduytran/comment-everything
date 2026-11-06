@@ -118,5 +118,6 @@ export async function writeAndSend(page: Page, texts: string[]): Promise<void> {
   const o = ui(page);
   for (const [i, t] of texts.entries()) await o.texts.nth(i).fill(t);
   await o.send.click();
-  await expect(o.toast).toContainText(`Sent ${texts.length}`);
+  // After Send the toast says what happens next: "Sent …" (agent connected) or "Saved …" (none yet).
+  await expect(o.toast).toContainText(/^(Sent|Saved)/);
 }

@@ -1,0 +1,43 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>Shortcut-happy page</title>
+  </head>
+  <body>
+    <h1 id="title">Shortcut-happy page</h1>
+    <input id="search" placeholder="Search or jump to..." />
+    <p id="intro">Press s or / to search, g then i to go to issues.</p>
+    <script>
+      // Listeners sit on document (capture and bubble) and window (bubble), like real sites that
+      // register after load. GitHub/Facebook style: single-key shortcuts on document, ignored only when the event
+      // target is a form field. A shadow-DOM textarea is retargeted to its host, so the check
+      // passes and the shortcut fires unless the overlay keeps the keystroke away.
+      window.__fired = [];
+      let pendingG = false;
+      const isField = (t) =>
+        t instanceof Element && t.matches('input,textarea,select,[contenteditable]');
+      document.addEventListener('keydown', (e) => {
+        if (isField(e.target) || e.ctrlKey || e.metaKey || e.altKey) return;
+        if (pendingG && e.key === 'i') {
+          window.__fired.push('g i');
+          location.hash = '#issues';
+        } else if (e.key === 's' || e.key === '/') {
+          window.__fired.push(e.key);
+          e.preventDefault();
+          document.getElementById('search').focus();
+        } else if (e.key === 'g') {
+          window.__fired.push('g');
+        }
+        pendingG = e.key === 'g';
+      });
+      for (const type of ['keypress', 'keyup', 'beforeinput', 'input']) {
+        const log = (e) => {
+          if (!isField(e.target)) window.__fired.push(`${type}:${e.key ?? e.data ?? ''}`);
+        };
+        window.addEventListener(type, log);
+        document.addEventListener(type, log, true);
+      }
+    </script>
+  </body>
+</html>

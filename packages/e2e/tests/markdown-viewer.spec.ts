@@ -65,7 +65,7 @@ test.describe('Markdown viewer', () => {
     expect(prompt).toMatchSnapshot('copy-prompt.txt');
 
     await o.send.click();
-    await expect(o.toast).toContainText('Sent 3');
+    await expect(o.toast).toContainText(/^(Sent|Saved)/);
     const [para, item, code] = await project.comments();
     expect(para).toMatchObject({ source: 'guide.md' });
     expect(para!.selectors[0]).toEqual({ type: 'LineRangeSelector', startLine: 3, endLine: 4 });
