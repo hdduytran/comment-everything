@@ -1,0 +1,15 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`overlay > copies a self-contained prompt for the pending drafts 1`] = `
+"# Review comments (1)
+
+Address each comment below. Each one names the source file or URL, where in it the comment applies, and the reviewer's note.
+
+## 1. \`docs/page.html\` (id: draft-1)
+- Location: CSS selector \`#a\`
+- Location: text quote
+> Alpha
+- Comment:
+> Use a darker colour
+"
+`;

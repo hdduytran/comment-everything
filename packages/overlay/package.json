@@ -1,0 +1,30 @@
+{
+  "name": "@comment-everything/overlay",
+  "version": "0.1.0",
+  "description": "Shadow-DOM commenting UI shared by the comment-everything viewer and Chrome extension.",
+  "license": "MIT",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsup",
+    "test": "vitest run",
+    "typecheck": "tsc -p tsconfig.json"
+  },
+  "dependencies": {
+    "@comment-everything/core": "workspace:*",
+    "html-to-image": "^1.11.13"
+  },
+  "devDependencies": {
+    "jsdom": "^26.1.0"
+  }
+}
