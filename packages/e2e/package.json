@@ -9,6 +9,7 @@
     "typecheck": "tsc -p tsconfig.json"
   },
   "devDependencies": {
-    "@playwright/test": "^1.56.0"
+    "@playwright/test": "^1.56.0",
+    "@types/chrome": "^0.1.0"
   }
 }

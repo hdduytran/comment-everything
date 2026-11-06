@@ -1,0 +1,21 @@
+{
+  "name": "@comment-everything/extension",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Chrome (MV3) extension that comments on live web pages and sends them to the local daemon.",
+  "license": "MIT",
+  "type": "module",
+  "scripts": {
+    "build": "node scripts/build-extension.mjs",
+    "test": "vitest run",
+    "typecheck": "tsc -p tsconfig.json"
+  },
+  "dependencies": {
+    "@comment-everything/core": "workspace:*",
+    "@comment-everything/overlay": "workspace:*"
+  },
+  "devDependencies": {
+    "@types/chrome": "^0.1.0",
+    "esbuild": "^0.25.0"
+  }
+}

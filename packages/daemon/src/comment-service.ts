@@ -51,7 +51,11 @@ export class ValidationError extends Error {
 }
 
 export const CreateBatchBodySchema = z.object({
-  /** Project root for file sources; ignored for http(s) sources (derived from the host). */
+  /**
+   * Project root the comments are stored under. Required for file sources. For http(s) sources
+   * it is optional: given, the comments land in that project's `.comments/` (a browser origin
+   * mapped to a project); absent, they go to the per-host folder under the home data dir.
+   */
   root: z.string().optional(),
   batchId: z.string().min(1).max(100).optional(),
   comments: z.array(CommentInputSchema).min(1).max(200),
@@ -88,7 +92,7 @@ export class CommentService implements CommentBackend {
     const created: CommentWithRoot[] = [];
     for (const input of body.comments) {
       let root: string;
-      if (isUrl(input.source)) {
+      if (isUrl(input.source) && !body.root) {
         root = (await this.registry.registerDataFolder(resolveStorageRoot(input.source, this.home)))
           .root;
       } else {
