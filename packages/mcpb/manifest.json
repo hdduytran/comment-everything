@@ -2,7 +2,7 @@
   "manifest_version": "0.2",
   "name": "comment-everything",
   "display_name": "Comment Everything",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Read and resolve the comments you leave on HTML, Markdown, web pages, video and audio.",
   "long_description": "Comment Everything lets you select parts of an HTML or Markdown file, a live web page, or time ranges in a video or audio file, write comments, and press Send. This extension gives Claude the tools to read those comments (with file path, selector, line range or timestamp, plus screenshots and video keyframes) and mark them resolved after acting on them. It also starts the local Comment Everything service on 127.0.0.1:4317, used by the viewer and the Chrome extension.",
   "author": {

@@ -1,6 +1,6 @@
 {
   "name": "comment-everything",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Comment on HTML, Markdown, web pages and media, then hand the comments to Claude Code or any MCP agent.",
   "keywords": [
     "mcp",
@@ -26,7 +26,7 @@
   "author": "Comment Everything contributors",
   "type": "module",
   "bin": {
-    "comment-everything": "./dist/cli.js"
+    "comment-everything": "dist/cli.js"
   },
   "files": [
     "dist",
