@@ -45,7 +45,9 @@ export const MEDIA_FRAGMENT_SPEC = 'http://www.w3.org/TR/media-frags/';
 export const FragmentSelectorSchema = z.object({
   type: z.literal('FragmentSelector'),
   conformsTo: z.literal(MEDIA_FRAGMENT_SPEC).default(MEDIA_FRAGMENT_SPEC),
-  value: z.string().regex(/^t=\d+(\.\d+)?(,\d+(\.\d+)?)?$/, 'expected media fragment t=start[,end]'),
+  value: z
+    .string()
+    .regex(/^t=\d+(\.\d+)?(,\d+(\.\d+)?)?$/, 'expected media fragment t=start[,end]'),
 });
 
 /** Custom: a rectangular region captured as an image asset. */
@@ -88,7 +90,5 @@ export function mediaFragmentSelector(startSec: number, endSec?: number): Fragme
 export function parseMediaFragment(sel: FragmentSelector): { start: number; end?: number } | null {
   const m = /^t=(\d+(?:\.\d+)?)(?:,(\d+(?:\.\d+)?))?$/.exec(sel.value);
   if (!m) return null;
-  return m[2] === undefined
-    ? { start: Number(m[1]) }
-    : { start: Number(m[1]), end: Number(m[2]) };
+  return m[2] === undefined ? { start: Number(m[1]) } : { start: Number(m[1]), end: Number(m[2]) };
 }

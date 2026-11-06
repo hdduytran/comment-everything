@@ -107,7 +107,10 @@ export class CommentStore {
   }
 
   /** Lists comments oldest-first. Unreadable files are skipped and reported via `onSkip`. */
-  async list(filter: ListFilter = {}, onSkip?: (file: string, err: unknown) => void): Promise<Comment[]> {
+  async list(
+    filter: ListFilter = {},
+    onSkip?: (file: string, err: unknown) => void,
+  ): Promise<Comment[]> {
     let names: string[];
     try {
       names = await readdir(this.commentsDir);
@@ -119,7 +122,9 @@ export class CommentStore {
     for (const name of names) {
       if (!name.endsWith('.json')) continue;
       try {
-        const c = parseComment(JSON.parse(await readFile(path.join(this.commentsDir, name), 'utf8')));
+        const c = parseComment(
+          JSON.parse(await readFile(path.join(this.commentsDir, name), 'utf8')),
+        );
         if (filter.source !== undefined && c.source !== filter.source) continue;
         if (filter.status !== undefined && c.status !== filter.status) continue;
         out.push(c);
@@ -132,7 +137,8 @@ export class CommentStore {
 
   /** Save an asset (keyframe/screenshot) and return its path relative to `.comments/`. */
   async writeAsset(name: string, data: Uint8Array): Promise<string> {
-    if (path.basename(name) !== name || name.startsWith('.')) throw new Error(`Invalid asset name: ${name}`);
+    if (path.basename(name) !== name || name.startsWith('.'))
+      throw new Error(`Invalid asset name: ${name}`);
     await mkdir(this.assetsDir, { recursive: true });
     await writeFileAtomic(path.join(this.assetsDir, name), data);
     return `assets/${name}`;
@@ -143,7 +149,8 @@ export class CommentStore {
    * (including edits made by other processes). Call the returned function to stop.
    */
   watch(emitter: EventEmitter | ((c: StorageChange) => void)): () => Promise<void> {
-    const emit = typeof emitter === 'function' ? emitter : (c: StorageChange) => emitter.emit('change', c);
+    const emit =
+      typeof emitter === 'function' ? emitter : (c: StorageChange) => emitter.emit('change', c);
     const watcher = chokidar.watch(this.commentsDir, {
       ignoreInitial: true,
       depth: 0,

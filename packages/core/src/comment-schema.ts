@@ -14,7 +14,13 @@ export type CommentStatus = z.infer<typeof CommentStatusSchema>;
 export const TranscriptSchema = z.object({
   text: z.string(),
   segments: z
-    .array(z.object({ start: z.number().nonnegative(), end: z.number().nonnegative(), text: z.string() }))
+    .array(
+      z.object({
+        start: z.number().nonnegative(),
+        end: z.number().nonnegative(),
+        text: z.string(),
+      }),
+    )
     .optional(),
 });
 export type Transcript = z.infer<typeof TranscriptSchema>;
@@ -104,7 +110,9 @@ export function parseComment(raw: unknown): Comment {
   if (typeof raw === 'object' && raw !== null && 'schemaVersion' in raw) {
     const v = (raw as { schemaVersion: unknown }).schemaVersion;
     if (v !== SCHEMA_VERSION) {
-      throw new Error(`Unsupported comment schemaVersion ${String(v)} (this build reads ${SCHEMA_VERSION})`);
+      throw new Error(
+        `Unsupported comment schemaVersion ${String(v)} (this build reads ${SCHEMA_VERSION})`,
+      );
     }
   }
   return CommentSchema.parse(raw);

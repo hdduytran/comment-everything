@@ -7,10 +7,16 @@
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
   "exports": {
-    ".": { "types": "./dist/index.d.ts", "import": "./dist/index.js" },
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    },
     "./schema/comment.schema.json": "./schema/comment.schema.json"
   },
-  "files": ["dist", "schema"],
+  "files": [
+    "dist",
+    "schema"
+  ],
   "scripts": {
     "build": "tsup && node scripts/generate-json-schema.mjs",
     "test": "vitest run",

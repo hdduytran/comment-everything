@@ -9,7 +9,10 @@ describe('CommentStore', () => {
     await withTempDir(async (dir) => {
       const store = new CommentStore(dir);
       const a = createComment({ source: 'a.md', text: 'one' }, { now: FIXED_NOW, id: 'a' });
-      const b = createComment({ source: 'b.md', text: 'two' }, { now: new Date(FIXED_NOW.getTime() + 1000), id: 'b' });
+      const b = createComment(
+        { source: 'b.md', text: 'two' },
+        { now: new Date(FIXED_NOW.getTime() + 1000), id: 'b' },
+      );
       await store.write(a);
       await store.write(b);
       expect(await store.read('a')).toEqual(a);
@@ -24,19 +27,27 @@ describe('CommentStore', () => {
 
   it('lists the committed fixtures', async () => {
     const list = await new CommentStore(FIXTURE_ROOT).list();
-    expect(list.map((c) => c.id)).toEqual(['fixture-html-quote', 'fixture-md-lines', 'fixture-video-range']);
+    expect(list.map((c) => c.id)).toEqual([
+      'fixture-html-quote',
+      'fixture-md-lines',
+      'fixture-video-range',
+    ]);
   });
 
   it('refuses ids that could escape the comments directory', async () => {
     await withTempDir(async (dir) => {
-      await expect(new CommentStore(dir).read('../../etc/passwd')).rejects.toThrow(/Invalid comment id/);
+      await expect(new CommentStore(dir).read('../../etc/passwd')).rejects.toThrow(
+        /Invalid comment id/,
+      );
     });
   });
 
   it('never exposes a partial file under concurrent atomic writes', async () => {
     await withTempDir(async (dir) => {
       const file = path.join(dir, 'target.json');
-      const payloads = Array.from({ length: 40 }, (_, i) => JSON.stringify({ n: i, pad: 'x'.repeat(50_000) }));
+      const payloads = Array.from({ length: 40 }, (_, i) =>
+        JSON.stringify({ n: i, pad: 'x'.repeat(50_000) }),
+      );
       let stop = false;
       let torn = 0;
       const reader = (async () => {
@@ -90,7 +101,8 @@ describe('CommentStore', () => {
       const stop = store.watch((e) => events.push(e));
       await new Promise((r) => setTimeout(r, 200));
       await store.write(createComment({ source: 's', text: 't' }, { id: 'w1' }));
-      for (let i = 0; i < 50 && events.length === 0; i++) await new Promise((r) => setTimeout(r, 100));
+      for (let i = 0; i < 50 && events.length === 0; i++)
+        await new Promise((r) => setTimeout(r, 100));
       await stop();
       expect(events[0]).toMatchObject({ type: 'add', id: 'w1' });
     });
@@ -100,7 +112,9 @@ describe('CommentStore', () => {
     await withTempDir(async (dir) => {
       const store = new CommentStore(dir);
       expect(await store.writeAsset('k.jpg', new Uint8Array([1, 2]))).toBe('assets/k.jpg');
-      await expect(store.writeAsset('../k.jpg', new Uint8Array())).rejects.toThrow(/Invalid asset name/);
+      await expect(store.writeAsset('../k.jpg', new Uint8Array())).rejects.toThrow(
+        /Invalid asset name/,
+      );
     });
   });
 });

@@ -2,11 +2,20 @@
   "schemaVersion": 1,
   "id": "fixture-video-range",
   "source": "media/demo.mp4",
-  "selectors": [{ "type": "FragmentSelector", "conformsTo": "http://www.w3.org/TR/media-frags/", "value": "t=12.5,48" }],
+  "selectors": [
+    {
+      "type": "FragmentSelector",
+      "conformsTo": "http://www.w3.org/TR/media-frags/",
+      "value": "t=12.5,48"
+    }
+  ],
   "text": "Cut this part, the audio drops out.",
   "status": "in_progress",
   "assets": ["assets/fixture-video-range-12.5.jpg"],
-  "transcript": { "text": "and then we, uh, restart the demo", "segments": [{ "start": 13, "end": 16.2, "text": "and then we, uh, restart the demo" }] },
+  "transcript": {
+    "text": "and then we, uh, restart the demo",
+    "segments": [{ "start": 13, "end": 16.2, "text": "and then we, uh, restart the demo" }]
+  },
   "createdAt": "2026-11-06T04:02:00.000Z",
   "updatedAt": "2026-11-06T04:02:00.000Z",
   "batchId": "batch-fixture-2"

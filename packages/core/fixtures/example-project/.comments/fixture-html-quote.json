@@ -4,7 +4,12 @@
   "source": "index.html",
   "selectors": [
     { "type": "CssSelector", "value": "main > h1" },
-    { "type": "TextQuoteSelector", "exact": "Welcome to our site", "prefix": "<h1>", "suffix": "</h1>" }
+    {
+      "type": "TextQuoteSelector",
+      "exact": "Welcome to our site",
+      "prefix": "<h1>",
+      "suffix": "</h1>"
+    }
   ],
   "text": "Make this headline shorter.",
   "status": "open",

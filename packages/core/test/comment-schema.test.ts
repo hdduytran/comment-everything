@@ -37,7 +37,11 @@ describe('comment schema', () => {
           { type: 'XPathSelector', value: '//a' },
           { type: 'LineRangeSelector', startLine: 1, endLine: 2 },
           mediaFragmentSelector(1.5, 3),
-          { type: 'ScreenshotSelector', rect: { x: 0, y: 1, width: 2, height: 3 }, asset: 'assets/a.png' },
+          {
+            type: 'ScreenshotSelector',
+            rect: { x: 0, y: 1, width: 2, height: 3 },
+            asset: 'assets/a.png',
+          },
         ],
       },
       { now: FIXED_NOW, id: 'abc', batchId: 'b1' },
@@ -54,14 +58,25 @@ describe('comment schema', () => {
   it('rejects traversal-prone ids and bad selectors', () => {
     const base = createComment({ source: 'a', text: '' });
     expect(() => parseComment({ ...base, id: '../evil' })).toThrow();
-    expect(() => parseComment({ ...base, selectors: [{ type: 'LineRangeSelector', startLine: 5, endLine: 2 }] })).toThrow();
-    expect(() => parseComment({ ...base, selectors: [{ type: 'FragmentSelector', value: 'x=1' }] })).toThrow();
+    expect(() =>
+      parseComment({
+        ...base,
+        selectors: [{ type: 'LineRangeSelector', startLine: 5, endLine: 2 }],
+      }),
+    ).toThrow();
+    expect(() =>
+      parseComment({ ...base, selectors: [{ type: 'FragmentSelector', value: 'x=1' }] }),
+    ).toThrow();
   });
 
   it('parses media fragments and applies patches', () => {
     expect(parseMediaFragment(mediaFragmentSelector(1.25, 9))).toEqual({ start: 1.25, end: 9 });
     const c = createComment({ source: 'a', text: 't' }, { now: FIXED_NOW });
-    const p = applyPatch(c, { status: 'resolved', resolution: 'done' }, new Date('2026-11-07T00:00:00Z'));
+    const p = applyPatch(
+      c,
+      { status: 'resolved', resolution: 'done' },
+      new Date('2026-11-07T00:00:00Z'),
+    );
     expect(p.status).toBe('resolved');
     expect(p.updatedAt).toBe('2026-11-07T00:00:00.000Z');
     expect(() => applyPatch(c, { id: 'x' } as never)).toThrow();
@@ -69,6 +84,8 @@ describe('comment schema', () => {
 
   it('keeps the published JSON Schema in sync with the zod schema', () => {
     const file = path.join(__dirname, '..', 'schema', 'comment.schema.json');
-    expect(JSON.parse(readFileSync(file, 'utf8'))).toEqual(JSON.parse(JSON.stringify(commentJsonSchema())));
+    expect(JSON.parse(readFileSync(file, 'utf8'))).toEqual(
+      JSON.parse(JSON.stringify(commentJsonSchema())),
+    );
   });
 });
