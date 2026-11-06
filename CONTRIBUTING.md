@@ -7,7 +7,7 @@ Thanks for helping. Bug reports, docs fixes and small features are all welcome; 
 Requirements: Node 20+, pnpm 10 (`corepack enable`), optional ffmpeg for the media tests.
 
 ```sh
-git clone https://github.com/<owner>/comment-everything.git
+git clone https://github.com/hdduytran/comment-everything.git
 cd comment-everything
 pnpm install
 pnpm -r build

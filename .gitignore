@@ -6,3 +6,4 @@ coverage
 test-results
 playwright-report
 packages/extension/release
+packages/mcpb/release/

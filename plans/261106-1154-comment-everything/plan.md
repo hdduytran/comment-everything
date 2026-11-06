@@ -76,7 +76,7 @@ Phases 4, 5, 6, 7 can run in parallel after their dependencies (separate package
 All eight phases are implemented and merged. Release preparation is done; nothing has been published.
 
 Remaining before launch (manual, needs accounts or decisions):
-- Replace the `<owner>` placeholder (README, `packages/cli/package.json`, `packages/cli/README.md`, CONTRIBUTING, plugin install text) with the real GitHub org/repo.
+- Replace the `hdduytran` placeholder (README, `packages/cli/package.json`, `packages/cli/README.md`, CONTRIBUTING, plugin install text) with the real GitHub org/repo.
 - Confirm the `comment-everything` npm name is free, then `pnpm release` (see CONTRIBUTING, "Releasing").
 - Chrome Web Store: run `pnpm --filter @comment-everything/extension zip`, add 1280x800 screenshots, host the privacy statement, submit.
 - Claude plugin marketplace listing, GitHub release, good-first-issue labels, launch posts (Show HN, r/ClaudeAI, X).

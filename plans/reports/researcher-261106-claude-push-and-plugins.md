@@ -30,10 +30,10 @@ research preview. Default path stays pull (`/comments`) + loop (`/comments-watch
 - Repo-root `.claude-plugin/marketplace.json`: required `name`, `owner{name}`, `plugins[]`; each entry needs
   `name` + `source`. Relative `source` is relative to the marketplace root and must start with `./`, no `..`.
   Entry name must equal manifest name.
-- Users: `/plugin marketplace add <owner>/<repo>` then `/plugin install comment-everything@comment-everything`
+- Users: `/plugin marketplace add hdduytran/<repo>` then `/plugin install comment-everything@comment-everything`
   (CLI: `claude plugin marketplace add`, `claude plugin install`).
 - Repo marketplace name must not be a reserved Anthropic name (we use `comment-everything`).
 
 ## Unresolved
-- `<owner>` in the install instructions is a placeholder until the repo is published (phase 8).
+- `hdduytran` in the install instructions is a placeholder until the repo is published (phase 8).
 - Plugin `.mcp.json` uses `npx -y comment-everything`: requires the npm package to be published.

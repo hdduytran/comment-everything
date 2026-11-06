@@ -1,0 +1,59 @@
+{
+  "manifest_version": "0.2",
+  "name": "comment-everything",
+  "display_name": "Comment Everything",
+  "version": "0.1.0",
+  "description": "Read and resolve the comments you leave on HTML, Markdown, web pages, video and audio.",
+  "long_description": "Comment Everything lets you select parts of an HTML or Markdown file, a live web page, or time ranges in a video or audio file, write comments, and press Send. This extension gives Claude the tools to read those comments (with file path, selector, line range or timestamp, plus screenshots and video keyframes) and mark them resolved after acting on them. It also starts the local Comment Everything service on 127.0.0.1:4317, used by the viewer and the Chrome extension.",
+  "author": {
+    "name": "Comment Everything contributors",
+    "url": "https://github.com/hdduytran/comment-everything"
+  },
+  "homepage": "https://github.com/hdduytran/comment-everything",
+  "documentation": "https://github.com/hdduytran/comment-everything#readme",
+  "support": "https://github.com/hdduytran/comment-everything/issues",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/hdduytran/comment-everything.git"
+  },
+  "icon": "icon.png",
+  "server": {
+    "type": "node",
+    "entry_point": "server/dist/cli.js",
+    "mcp_config": {
+      "command": "node",
+      "args": ["${__dirname}/server/dist/cli.js", "mcp"],
+      "env": {}
+    }
+  },
+  "tools": [
+    {
+      "name": "list_comments",
+      "description": "List review comments left on files and web pages"
+    },
+    {
+      "name": "get_comment",
+      "description": "Get one comment with its anchor, transcript and images"
+    },
+    {
+      "name": "resolve_comment",
+      "description": "Mark a comment resolved with a note on what changed"
+    },
+    {
+      "name": "set_status",
+      "description": "Set a comment status (open, in_progress, resolved)"
+    },
+    {
+      "name": "wait_for_comments",
+      "description": "Wait until the user presses Send, then return that batch"
+    }
+  ],
+  "keywords": ["comments", "review", "annotation", "video", "markdown", "html"],
+  "license": "MIT",
+  "compatibility": {
+    "platforms": ["darwin", "win32", "linux"],
+    "runtimes": {
+      "node": ">=20.0.0"
+    }
+  }
+}

@@ -38,7 +38,7 @@ The viewer opens in your browser. Pick elements or select text, write a comment 
 Claude Code plugin (MCP server, skill, `/comment-everything:comments` and `/comment-everything:comments-watch`):
 
 ```text
-/plugin marketplace add <owner>/comment-everything
+/plugin marketplace add hdduytran/comment-everything
 /plugin install comment-everything@comment-everything
 ```
 
@@ -49,6 +49,10 @@ claude mcp add comment-everything -- npx -y comment-everything mcp
 ```
 
 **3. Claude Desktop**
+
+Easiest: download `comment-everything-<version>.mcpb` from the [latest release](https://github.com/hdduytran/comment-everything/releases/latest) and double-click it (or drag it into Claude Desktop → Settings → Extensions). Claude Desktop ships its own Node.js, so nothing else needs installing.
+
+Or, with Node.js installed:
 
 ```sh
 npx comment-everything init --write-desktop-config

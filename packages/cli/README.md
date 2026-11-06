@@ -13,4 +13,4 @@ Run `npx comment-everything --help` for all commands (`open`, `serve`, `mcp`, `s
 
 Requires Node 20 or newer. ffmpeg (keyframes) and whisper.cpp (transcripts) are optional.
 
-Full documentation, security model and the Chrome extension: https://github.com/<owner>/comment-everything
+Full documentation, security model and the Chrome extension: https://github.com/hdduytran/comment-everything

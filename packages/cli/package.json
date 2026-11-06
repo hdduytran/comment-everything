@@ -13,13 +13,13 @@
     "html",
     "video"
   ],
-  "homepage": "https://github.com/<owner>/comment-everything#readme",
+  "homepage": "https://github.com/hdduytran/comment-everything#readme",
   "bugs": {
-    "url": "https://github.com/<owner>/comment-everything/issues"
+    "url": "https://github.com/hdduytran/comment-everything/issues"
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/<owner>/comment-everything.git",
+    "url": "git+https://github.com/hdduytran/comment-everything.git",
     "directory": "packages/cli"
   },
   "license": "MIT",

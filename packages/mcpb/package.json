@@ -1,0 +1,10 @@
+{
+  "name": "@comment-everything/mcpb",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Claude Desktop extension (.mcpb) bundle for Comment Everything",
+  "type": "module",
+  "scripts": {
+    "pack:mcpb": "node scripts/build-mcpb.mjs"
+  }
+}

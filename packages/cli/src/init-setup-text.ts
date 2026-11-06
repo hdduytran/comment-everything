@@ -12,7 +12,7 @@ export function renderSetupText(opts: { desktopConfigPath: string }): string {
   return `Connect your AI agent to comment-everything
 
 Claude Code (plugin: MCP server + skill + /comments and /comments-watch)
-    /plugin marketplace add <owner>/comment-everything
+    /plugin marketplace add hdduytran/comment-everything
     /plugin install comment-everything@comment-everything
 
 Claude Code (MCP server only)
