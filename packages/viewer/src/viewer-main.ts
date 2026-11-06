@@ -1,11 +1,13 @@
 import { createHttpDaemonTransport, createOverlay } from '@comment-everything/overlay';
 import { readViewerConfig } from './viewer-config.js';
+import { viewerTooltips } from './viewer-tooltips.js';
 import { viewerFor } from './viewer-router.js';
 
 /** Entry point of the viewer page served by the daemon at `/view?path=`. */
 async function main(): Promise<void> {
   const app = document.getElementById('ce-app');
   if (!app) throw new Error('Viewer root element is missing');
+  viewerTooltips(); // installs the shared design tokens before any content renders
   try {
     const cfg = readViewerConfig();
     const mount = viewerFor(cfg.source);

@@ -56,7 +56,10 @@ export function createWaveformRangeSelector(opts: WaveformOptions): WaveformRang
     waveColor: '#94a3b8',
     progressColor: '#2563eb',
     cursorColor: '#ef4444',
-    plugins: [regions, TimelinePlugin.create()],
+    plugins: [
+      regions,
+      TimelinePlugin.create({ style: { color: 'var(--ce-text-muted, #5b6573)' } }),
+    ],
   });
 
   const ours = new Map<string, Region>();

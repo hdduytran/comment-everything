@@ -1,23 +1,56 @@
-/* Viewer page shell. The 340px right margin matches the overlay's docked panel width. */
+/* Viewer page shell. The right margin matches the overlay's docked panel width and shrinks
+   to nothing when the panel is collapsed to its handle. Colours come from the overlay's tokens
+   (injected at startup); fallbacks keep the first paint sensible. */
+:root {
+  color-scheme: light dark;
+  --hl-comment: #6e7781;
+  --hl-keyword: #cf222e;
+  --hl-string: #0a3069;
+  --hl-number: #0550ae;
+  --hl-title: #8250df;
+  --hl-builtin: #953800;
+  --hl-deletion: #82071e;
+  --hl-meta: #57606a;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --hl-comment: #8b949e;
+    --hl-keyword: #ff7b72;
+    --hl-string: #a5d6ff;
+    --hl-number: #79c0ff;
+    --hl-title: #d2a8ff;
+    --hl-builtin: #ffa657;
+    --hl-deletion: #ffa198;
+    --hl-meta: #8b949e;
+  }
+  html {
+    background: #16181d;
+  }
+}
 html,
 body {
   margin: 0;
   padding: 0;
-  background: #fff;
-  color: #1f2328;
+  background: var(--ce-bg, #fff);
+  color: var(--ce-text, #1f2328);
   font:
-    16px/1.6 system-ui,
+    16px/1.6 ui-sans-serif,
+    system-ui,
     -apple-system,
     'Segoe UI',
+    Roboto,
     sans-serif;
 }
 #ce-app {
   margin-right: 340px;
   min-height: 100vh;
 }
+body:has([data-ce-panel='collapsed']) #ce-app {
+  margin-right: 0;
+}
 .ce-loading {
   padding: 2rem;
-  color: #6b7280;
+  color: var(--ce-text-muted, #6b7280);
 }
 .ce-html-frame {
   display: block;
@@ -36,7 +69,7 @@ body {
 }
 .ce-markdown h1,
 .ce-markdown h2 {
-  border-bottom: 1px solid #d8dee4;
+  border-bottom: 1px solid var(--ce-border, #d8dee4);
   padding-bottom: 0.3em;
 }
 .ce-markdown h1,
@@ -52,12 +85,12 @@ body {
     SFMono-Regular,
     Menlo,
     monospace;
-  background: #eff1f3;
+  background: var(--ce-bg-hover, #eff1f3);
   padding: 0.15em 0.35em;
   border-radius: 4px;
 }
 .ce-markdown pre {
-  background: #f6f8fa;
+  background: var(--ce-bg-subtle, #f6f8fa);
   padding: 1rem;
   border-radius: 8px;
   overflow: auto;
@@ -71,8 +104,8 @@ body {
 .ce-markdown blockquote {
   margin: 1em 0;
   padding: 0 1em;
-  color: #59636e;
-  border-left: 4px solid #d1d9e0;
+  color: var(--ce-text-muted, #59636e);
+  border-left: 4px solid var(--ce-border-strong, #d1d9e0);
 }
 .ce-markdown table {
   border-collapse: collapse;
@@ -81,72 +114,75 @@ body {
 }
 .ce-markdown th,
 .ce-markdown td {
-  border: 1px solid #d1d9e0;
+  border: 1px solid var(--ce-border, #d1d9e0);
   padding: 6px 13px;
 }
 .ce-markdown tr:nth-child(2n) {
-  background: #f6f8fa;
+  background: var(--ce-bg-subtle, #f6f8fa);
 }
 .ce-markdown img {
   max-width: 100%;
 }
 .ce-markdown a {
-  color: #0969da;
+  color: var(--ce-accent-text, #0969da);
 }
 .ce-markdown li.task-list-item {
   list-style: none;
   margin-left: -1.4em;
 }
+/* Mermaid renders with its light theme, so its diagrams keep a light card in dark mode. */
 .ce-markdown pre.mermaid {
-  background: none;
+  background: #fff;
+  color: #1f2328;
   text-align: center;
 }
 .ce-markdown pre.mermaid-error {
-  background: #fff5f5;
-  border: 1px solid #fca5a5;
+  background: var(--ce-danger-soft, #fff5f5);
+  border: 1px solid var(--ce-danger, #fca5a5);
+  color: var(--ce-danger-text, inherit);
 }
 
 /* highlight.js token colors */
 .hljs-comment,
 .hljs-quote {
-  color: #6e7781;
+  color: var(--hl-comment);
   font-style: italic;
 }
 .hljs-keyword,
 .hljs-selector-tag,
 .hljs-literal,
 .hljs-type {
-  color: #cf222e;
+  color: var(--hl-keyword);
 }
 .hljs-string,
 .hljs-regexp,
 .hljs-addition {
-  color: #0a3069;
+  color: var(--hl-string);
 }
 .hljs-number,
 .hljs-attr,
 .hljs-attribute,
 .hljs-variable,
 .hljs-template-variable {
-  color: #0550ae;
+  color: var(--hl-number);
 }
 .hljs-title,
 .hljs-section,
 .hljs-name,
 .hljs-selector-id,
 .hljs-selector-class {
-  color: #8250df;
+  color: var(--hl-title);
 }
 .hljs-built_in,
 .hljs-symbol,
 .hljs-bullet {
-  color: #953800;
+  color: var(--hl-builtin);
 }
 .hljs-deletion {
-  color: #82071e;
+  color: var(--hl-deletion);
 }
 .hljs-meta {
-  color: #57606a;
+  color: var(--hl-meta);
 }
 
 /* Media viewer */
@@ -163,10 +199,10 @@ body {
 .ce-media-banner {
   margin-bottom: 0.75rem;
   padding: 0.6rem 0.9rem;
-  border: 1px solid #f59e0b;
+  border: 1px solid var(--ce-warn-text, #92400e);
   border-radius: 6px;
-  background: #fffbeb;
-  color: #92400e;
+  background: var(--ce-warn-soft, #fffbeb);
+  color: var(--ce-warn-text, #92400e);
   font-size: 14px;
 }
 .ce-media-controls {
@@ -175,31 +211,68 @@ body {
   align-items: center;
   gap: 6px;
   margin-bottom: 0.5rem;
-  font-size: 13px;
+  font: 13px/1.4 var(--ce-font, system-ui, sans-serif);
+}
+.ce-media-controls .group {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+.ce-media-controls .group + .group {
+  margin-left: 8px;
 }
 .ce-media-controls button,
 .ce-media-controls select {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 28px;
+  padding: 0 10px;
   font: inherit;
-  padding: 4px 9px;
-  border: 1px solid #cbd5e1;
-  border-radius: 6px;
-  background: #f8fafc;
+  font-weight: 500;
+  color: var(--ce-text, #14181f);
+  border: 1px solid var(--ce-border-strong, #cbd5e1);
+  border-radius: var(--ce-radius, 6px);
+  background: var(--ce-bg, #f8fafc);
   cursor: pointer;
+  transition:
+    background-color 120ms var(--ce-ease, ease),
+    transform 120ms var(--ce-ease, ease);
+}
+.ce-media-controls button:hover,
+.ce-media-controls select:hover {
+  background: var(--ce-bg-hover, #eceef2);
+}
+.ce-media-controls button:active {
+  transform: scale(0.98);
+}
+.ce-media-controls button:focus-visible,
+.ce-media-controls select:focus-visible {
+  outline: 2px solid var(--ce-focus, #2456d6);
+  outline-offset: 1px;
+}
+.ce-media-controls button.icon-only {
+  width: 28px;
+  padding: 0;
+}
+.ce-media-controls button[hidden] {
+  display: none;
 }
 .ce-media-controls button.active {
-  background: #2563eb;
-  border-color: #2563eb;
-  color: #fff;
+  background: var(--ce-accent-soft, #e9effd);
+  border-color: var(--ce-accent, #2456d6);
+  color: var(--ce-accent-text, #1f4bc2);
 }
 .ce-media-time {
   font-variant-numeric: tabular-nums;
   min-width: 11em;
+  color: var(--ce-text-muted, #5b6573);
 }
 .ce-media-status {
-  color: #475569;
+  color: var(--ce-text-muted, #475569);
 }
 .ce-waveform {
-  border: 1px solid #e2e8f0;
+  border: 1px solid var(--ce-border, #e2e8f0);
   border-radius: 6px;
   padding: 4px;
 }
@@ -210,12 +283,23 @@ body {
   gap: 2px;
 }
 .ce-thumbs-note {
-  color: #6b7280;
+  color: var(--ce-text-muted, #6b7280);
   font-size: 13px;
 }
 .ce-thumb {
   flex: none;
   padding: 0;
-  border: 1px solid #cbd5e1;
+  border: 1px solid var(--ce-border-strong, #cbd5e1);
+  background: none;
   cursor: pointer;
+}
+.ce-thumb:focus-visible {
+  outline: 2px solid var(--ce-focus, #2456d6);
+  outline-offset: 1px;
+}
+@media (prefers-reduced-motion: reduce) {
+  .ce-media-controls button,
+  .ce-media-controls select {
+    transition: none;
+  }
 }
