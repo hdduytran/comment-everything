@@ -65,6 +65,7 @@ export function rawRequest(
   reqPath: string,
   headers: Record<string, string> = {},
   method = 'GET',
+  body?: string,
 ): Promise<RawResponse> {
   return new Promise((resolve, reject) => {
     const req = http.request(
@@ -88,7 +89,7 @@ export function rawRequest(
       },
     );
     req.on('error', reject);
-    req.end();
+    req.end(body);
   });
 }
 

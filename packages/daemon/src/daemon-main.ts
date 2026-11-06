@@ -15,6 +15,7 @@ import {
 import { FileChangeWatcher } from './file-change-watcher.js';
 import { JobQueue } from './job-queue.js';
 import { MCP_SERVER_VERSION } from './mcp-server-tools.js';
+import { PairedExtensionStore } from './paired-extension-store.js';
 import { ProjectRootRegistry } from './project-root-registry.js';
 import { defaultViewerDir } from './viewer-assets-route.js';
 
@@ -39,6 +40,7 @@ export interface RunningDaemon {
   registry: ProjectRootRegistry;
   service: CommentService;
   jobs: JobQueue;
+  pairedExtensions: PairedExtensionStore;
   stop(): Promise<void>;
 }
 
@@ -74,6 +76,8 @@ export async function startDaemon(opts: StartDaemonOptions = {}): Promise<Runnin
   wiring.service = service;
   await registry.load();
 
+  const pairedExtensions = new PairedExtensionStore(home);
+  await pairedExtensions.load();
   const fileWatcher = new FileChangeWatcher(bus);
   let port = 0;
   const app = createApp({
@@ -87,6 +91,7 @@ export async function startDaemon(opts: StartDaemonOptions = {}): Promise<Runnin
     sandboxHtml: opts.sandboxHtml,
     viewerDir: opts.viewerDir ?? defaultViewerDir(),
     fileWatcher,
+    pairedExtensions,
   });
 
   const server = await listen(app.fetch, opts.port ?? DEFAULT_PORT);
@@ -111,6 +116,7 @@ export async function startDaemon(opts: StartDaemonOptions = {}): Promise<Runnin
     registry,
     service,
     jobs,
+    pairedExtensions,
     async stop() {
       if (useLock) await releaseLock(process.pid, home);
       fileWatcher.close();

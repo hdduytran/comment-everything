@@ -7,15 +7,15 @@ export interface GuardConfig {
   token: string;
   /** Port the server actually listens on (known only after `listen`). */
   getPort: () => number;
-  /** Extra exact origins to allow besides the daemon's own and chrome-extension://. */
-  extraAllowedOrigins?: string[];
+  /** Whether this Chrome extension id was paired by the user; only those origins are allowed. */
+  isPairedExtension?: (id: string) => boolean;
 }
 
 /** `/files/...` or the token-in-path form `/s/<token>/files/...`. */
 export const FILES_PATH = /^\/(?:s\/[^/]+\/)?files\//;
 
 /** Paths reachable without a token (still subject to Host and Origin checks). */
-const PUBLIC_PATHS = new Set(['/health', '/view']);
+const PUBLIC_PATHS = new Set(['/health', '/view', '/pair', '/pair/confirm']);
 /** Static viewer bundle: code only, no secrets, and the sandboxed frame agent loads it tokenless. */
 const PUBLIC_PREFIXES = ['/_ce/'];
 
@@ -31,8 +31,8 @@ function daemonHosts(port: number): string[] {
 
 function isAllowedOrigin(origin: string, cfg: GuardConfig, path: string): boolean {
   if (daemonHosts(cfg.getPort()).some((h) => origin === `http://${h}`)) return true;
-  if (origin.startsWith('chrome-extension://')) return true;
-  if (cfg.extraAllowedOrigins?.includes(origin)) return true;
+  const ext = /^chrome-extension:\/\/([a-p]{32})$/.exec(origin);
+  if (ext?.[1] && cfg.isPairedExtension?.(ext[1])) return true;
   // Sandboxed project HTML has an opaque ("null") origin; it may only read scoped files,
   // and still needs the capability token carried in its URL.
   return origin === 'null' && FILES_PATH.test(path);
@@ -51,7 +51,7 @@ export function hostGuard(cfg: GuardConfig): MiddlewareHandler {
 
 /**
  * Origin policy: requests with no Origin (CLI, curl, same-origin GET navigation) pass;
- * browser requests must come from the daemon itself or a chrome-extension:// page.
+ * browser requests must come from the daemon itself or a paired chrome-extension:// page.
  * Handles CORS preflight and adds CORS headers for allowed cross-origin callers.
  */
 export function originGuard(cfg: GuardConfig): MiddlewareHandler {

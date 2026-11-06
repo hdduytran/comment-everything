@@ -15,3 +15,5 @@ export * from './viewer-page.js';
 export * from './asset-upload-route.js';
 export * from './file-change-watcher.js';
 export * from './viewer-assets-route.js';
+export * from './paired-extension-store.js';
+export * from './extension-pairing-route.js';
