@@ -10,3 +10,7 @@
 ## Validation
 - Fresh machine quickstart < 5 min (timed).
 - CI green; npm `npx comment-everything --version` works.
+
+## Status
+
+Done (2026-11-06): docs, demo GIFs, community files, changesets, cli pack verification and extension zip script are in place. Publishing steps are intentionally left to the maintainers; see plan.md "Status notes".

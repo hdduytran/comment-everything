@@ -1,6 +1,6 @@
 ---
 title: Comment Everything — MVP
-status: pending
+status: done
 created: 2026-11-06
 ---
 
@@ -45,14 +45,14 @@ packages/
 ## Phases
 | # | Phase | Depends on | Status |
 |---|-------|-----------|--------|
-| 1 | [Monorepo + core schema & storage](phase-01-core-schema-storage.md) | — | pending |
-| 2 | [Daemon, security, MCP server](phase-02-daemon-mcp.md) | 1 | pending |
-| 3 | [Overlay + HTML/MD viewer + Copy prompt](phase-03-overlay-html-md-viewer.md) | 2 | pending |
-| 4 | [Media viewer: video/audio ranges, keyframes, transcript](phase-04-media-viewer.md) | 2, 3 (overlay panel) | pending |
-| 5 | [Re-anchoring after file changes](phase-05-reanchoring.md) | 3 | pending |
-| 6 | [Chrome extension](phase-06-extension.md) | 3 | pending |
-| 7 | [Claude integration: plugin, Desktop config, push](phase-07-claude-integration.md) | 2 | pending |
-| 8 | [Docs, demo, release](phase-08-docs-release.md) | all | pending |
+| 1 | [Monorepo + core schema & storage](phase-01-core-schema-storage.md) | — | done |
+| 2 | [Daemon, security, MCP server](phase-02-daemon-mcp.md) | 1 | done |
+| 3 | [Overlay + HTML/MD viewer + Copy prompt](phase-03-overlay-html-md-viewer.md) | 2 | done |
+| 4 | [Media viewer: video/audio ranges, keyframes, transcript](phase-04-media-viewer.md) | 2, 3 (overlay panel) | done |
+| 5 | [Re-anchoring after file changes](phase-05-reanchoring.md) | 3 | done |
+| 6 | [Chrome extension](phase-06-extension.md) | 3 | done |
+| 7 | [Claude integration: plugin, Desktop config, push](phase-07-claude-integration.md) | 2 | done |
+| 8 | [Docs, demo, release](phase-08-docs-release.md) | all | done |
 
 Phases 4, 5, 6, 7 can run in parallel after their dependencies (separate packages).
 
@@ -70,3 +70,21 @@ Phases 4, 5, 6, 7 can run in parallel after their dependencies (separate package
 ## Unresolved questions
 - Final package/npm name availability (`comment-everything`).
 - Whether Claude Code channels/notification push is usable in the target version (verify in phase 7).
+
+## Status notes (phase 8)
+
+All eight phases are implemented and merged. Release preparation is done; nothing has been published.
+
+Remaining before launch (manual, needs accounts or decisions):
+- Replace the `<owner>` placeholder (README, `packages/cli/package.json`, `packages/cli/README.md`, CONTRIBUTING, plugin install text) with the real GitHub org/repo.
+- Confirm the `comment-everything` npm name is free, then `pnpm release` (see CONTRIBUTING, "Releasing").
+- Chrome Web Store: run `pnpm --filter @comment-everything/extension zip`, add 1280x800 screenshots, host the privacy statement, submit.
+- Claude plugin marketplace listing, GitHub release, good-first-issue labels, launch posts (Show HN, r/ClaudeAI, X).
+- Time the fresh-machine quickstart (< 5 min target) after the npm package is live.
+
+Known concerns:
+- Token in the sandboxed iframe's file URL is readable by the viewed page's own scripts (documented in README and docs/architecture.md); a per-frame, file-scoped capability would remove it.
+- `MCP_SERVER_VERSION` in the daemon is a constant; keep it in step with the CLI version when changesets bump it.
+- LoopIn could not be verified from public sources, so the README comparison table covers Vibe Annotations, Claudback and Frame.io only.
+- Channel push still needs `--dangerously-load-development-channels` (research preview).
+- Code of Conduct has no dedicated contact address yet.
