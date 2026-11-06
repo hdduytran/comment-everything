@@ -24,6 +24,23 @@ export const TranscriptSchema = z.object({
 });
 export type Transcript = z.infer<typeof TranscriptSchema>;
 
+/**
+ * Whether the comment's selectors still point at the commented content after the source
+ * changed: `ok` (unchanged), `moved` (found elsewhere) or `orphaned` (content gone; detached).
+ * Absent means the source was never re-checked.
+ */
+export const AnchorStateSchema = z.enum(['ok', 'moved', 'orphaned']);
+export type AnchorState = z.infer<typeof AnchorStateSchema>;
+
+/** Last position the re-anchoring engine resolved: offsets in the source's searchable text. */
+export const LastResolvedSchema = z.object({
+  start: z.number().int().nonnegative(),
+  end: z.number().int().nonnegative(),
+  startLine: z.number().int().positive().optional(),
+  endLine: z.number().int().positive().optional(),
+});
+export type LastResolved = z.infer<typeof LastResolvedSchema>;
+
 export const CommentIdSchema = z.string().regex(COMMENT_ID_PATTERN, 'invalid comment id');
 
 /** The persisted comment: one JSON file per comment in `.comments/<id>.json`. */
@@ -41,6 +58,8 @@ export const CommentSchema = z.object({
   /** Keyframe / screenshot paths relative to the `.comments/` directory. */
   assets: z.array(z.string().min(1)),
   transcript: TranscriptSchema.optional(),
+  anchorState: AnchorStateSchema.optional(),
+  lastResolved: LastResolvedSchema.optional(),
   createdAt: z.iso.datetime(),
   updatedAt: z.iso.datetime(),
   /** Comments sent together (one "Send" press) share a batchId. */
@@ -67,6 +86,8 @@ export const CommentPatchSchema = z
     selectors: z.array(SelectorSchema),
     assets: z.array(z.string().min(1)),
     transcript: TranscriptSchema,
+    anchorState: AnchorStateSchema,
+    lastResolved: LastResolvedSchema,
   })
   .partial()
   .strict();

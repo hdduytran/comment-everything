@@ -35,6 +35,8 @@ textarea{width:100%;min-height:54px;margin-top:6px;resize:vertical;font:inherit;
 .sent.resolved .chip{background:#dcfce7}
 .sent .text{white-space:pre-wrap;word-break:break-word;margin-top:2px}
 .sent .note{margin-top:4px;color:#166534;white-space:pre-wrap;word-break:break-word}
+.sent.detached{border-color:#dc2626;border-left-style:dashed;opacity:.85}
+.sent .detached-chip{background:#fee2e2;color:#991b1b;margin-left:4px}
 .sent .where{color:#6b7280;font-size:11px}
 footer{display:flex;gap:6px;padding:10px 12px;border-top:1px solid #e5e7eb;flex-wrap:wrap}
 footer .primary{flex:1}

@@ -3,3 +3,7 @@ export * from './comment-schema.js';
 export * from './comment-storage.js';
 export * from './project-root-resolver.js';
 export * from './prompt-formatter.js';
+export * from './fuzzy-text-quote-matcher.js';
+export * from './reanchor-engine.js';
+export * from './reanchor-text-source.js';
+export * from './source-text-projection.js';

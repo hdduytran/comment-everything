@@ -176,8 +176,23 @@ export class SidePanel {
         return el(
           d,
           'div',
-          { class: `sent ${c.status}`, 'data-ce': 'sent-item', 'data-status': c.status },
+          {
+            class: `sent ${c.status}${c.anchorState === 'orphaned' ? ' detached' : ''}`,
+            'data-ce': 'sent-item',
+            'data-status': c.status,
+            ...(c.anchorState ? { 'data-anchor': c.anchorState } : {}),
+          },
           el(d, 'span', { class: 'chip', text: STATUS_LABEL[c.status] }),
+          ...(c.anchorState === 'orphaned'
+            ? [
+                el(d, 'span', {
+                  class: 'chip detached-chip',
+                  text: 'Detached',
+                  title: 'The commented content no longer exists in the file',
+                  'data-ce': 'detached',
+                }),
+              ]
+            : []),
           el(d, 'span', { class: 'where', text: ` ${where}` }),
           el(d, 'div', { class: 'text', text: c.text }),
           ...(c.resolution
