@@ -42,26 +42,40 @@ async function waitFor<T>(fn: () => Promise<T | null>, what: string, ms = 15_000
   throw new Error(`Timed out waiting for ${what}`);
 }
 
+/** Start a real daemon through the built CLI on a random port with its own home folder. */
+export async function startDaemon(): Promise<DaemonHandle & { stop(): Promise<void> }> {
+  const home = await realpath(await mkdtemp(path.join(tmpdir(), 'ce-e2e-home-')));
+  const child: ChildProcess = spawn(process.execPath, [CLI, 'serve', '--port', '0'], {
+    env: { ...process.env, COMMENT_EVERYTHING_HOME: home },
+    stdio: 'ignore',
+  });
+  const stop = async () => {
+    child.kill('SIGTERM');
+    await new Promise((r) => (child.exitCode !== null ? r(null) : child.once('exit', r)));
+    await rm(home, { recursive: true, force: true });
+  };
+  try {
+    const lock = await waitFor(async () => {
+      const raw = await readFile(path.join(home, '.comment-everything', 'daemon.json'), 'utf8');
+      return JSON.parse(raw) as { port: number; token: string };
+    }, 'daemon lockfile');
+    return { home, url: `http://127.0.0.1:${lock.port}`, token: lock.token, stop };
+  } catch (err) {
+    await stop();
+    throw err;
+  }
+}
+
 export const test = base.extend<{ project: Project }, { daemon: DaemonHandle }>({
   // One real daemon per worker, started through the built CLI; always stopped afterwards.
   daemon: [
     // eslint-disable-next-line no-empty-pattern
     async ({}, use) => {
-      const home = await realpath(await mkdtemp(path.join(tmpdir(), 'ce-e2e-home-')));
-      const child: ChildProcess = spawn(process.execPath, [CLI, 'serve', '--port', '0'], {
-        env: { ...process.env, COMMENT_EVERYTHING_HOME: home },
-        stdio: 'ignore',
-      });
+      const { stop, ...handle } = await startDaemon();
       try {
-        const lock = await waitFor(async () => {
-          const raw = await readFile(path.join(home, '.comment-everything', 'daemon.json'), 'utf8');
-          return JSON.parse(raw) as { port: number; token: string };
-        }, 'daemon lockfile');
-        await use({ home, url: `http://127.0.0.1:${lock.port}`, token: lock.token });
+        await use(handle);
       } finally {
-        child.kill('SIGTERM');
-        await new Promise((r) => (child.exitCode !== null ? r(null) : child.once('exit', r)));
-        await rm(home, { recursive: true, force: true });
+        await stop();
       }
     },
     { scope: 'worker' },
