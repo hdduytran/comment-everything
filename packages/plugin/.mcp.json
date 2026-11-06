@@ -1,0 +1,8 @@
+{
+  "mcpServers": {
+    "comment-everything": {
+      "command": "npx",
+      "args": ["-y", "comment-everything", "mcp"]
+    }
+  }
+}

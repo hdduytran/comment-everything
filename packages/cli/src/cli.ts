@@ -1,14 +1,20 @@
 import { parseArgs } from 'node:util';
+import { initCommand } from './init-command.js';
 import { mcpCommand } from './mcp-command.js';
 import { openCommand } from './open-command.js';
 import { serveCommand } from './serve-command.js';
+import { stopCommand } from './stop-command.js';
 
 const HELP = `comment-everything — comment on files and pages, hand the comments to an AI agent
 
 Usage:
   comment-everything open <file> [--no-open] [--port <n>]   Open a file in the viewer
   comment-everything serve [--port <n>]                      Run the local daemon in the foreground
-  comment-everything mcp [--port <n>]                        MCP server over stdio (proxies to the daemon)
+  comment-everything mcp [--port <n>] [--channel]            MCP server over stdio (proxies to the daemon);
+                                                             --channel pushes sent comments into Claude Code
+  comment-everything stop                                    Stop the background daemon
+  comment-everything init [--gitignore-assets] [--write-desktop-config]
+                                                             Print setup for Claude Code/Desktop/Cursor/Codex
 
 Register with Claude Code:
   claude mcp add comment-everything -- npx comment-everything mcp
@@ -22,6 +28,9 @@ async function main(argv: string[]): Promise<number> {
     options: {
       port: { type: 'string' },
       'no-open': { type: 'boolean' },
+      channel: { type: 'boolean' },
+      'gitignore-assets': { type: 'boolean' },
+      'write-desktop-config': { type: 'boolean' },
       help: { type: 'boolean', short: 'h' },
     },
   });
@@ -41,7 +50,17 @@ async function main(argv: string[]): Promise<number> {
     case 'serve':
       return serveCommand({ port });
     case 'mcp':
-      return mcpCommand({ port });
+      return mcpCommand({ port, channel: values.channel });
+    case 'stop':
+      return stopCommand();
+    case 'init':
+      console.log(
+        await initCommand({
+          gitignoreAssets: values['gitignore-assets'],
+          writeDesktopConfig: values['write-desktop-config'],
+        }),
+      );
+      return 0;
     case 'open': {
       if (rest.length !== 1) {
         console.error('Usage: comment-everything open <file>');
