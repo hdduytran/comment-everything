@@ -13,9 +13,14 @@
     "typecheck": "pnpm -r typecheck",
     "e2e": "pnpm --filter @comment-everything/e2e e2e",
     "lint": "eslint .",
-    "format": "prettier --write ."
+    "format": "prettier --write .",
+    "changeset": "changeset",
+    "version-packages": "changeset version",
+    "release": "pnpm -r build && changeset publish",
+    "pack:cli": "pnpm --filter comment-everything pack"
   },
   "devDependencies": {
+    "@changesets/cli": "^2.31.1",
     "@eslint/js": "^9.39.0",
     "@types/node": "^22.19.0",
     "eslint": "^9.39.0",

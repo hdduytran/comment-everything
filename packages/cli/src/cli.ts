@@ -2,6 +2,7 @@ import { parseArgs } from 'node:util';
 import { initCommand } from './init-command.js';
 import { mcpCommand } from './mcp-command.js';
 import { openCommand } from './open-command.js';
+import { readPackageVersion } from './package-version.js';
 import { serveCommand } from './serve-command.js';
 import { stopCommand } from './stop-command.js';
 
@@ -13,6 +14,7 @@ Usage:
   comment-everything mcp [--port <n>] [--channel]            MCP server over stdio (proxies to the daemon);
                                                              --channel pushes sent comments into Claude Code
   comment-everything stop                                    Stop the background daemon
+  comment-everything --version                               Print the installed version
   comment-everything init [--gitignore-assets] [--write-desktop-config]
                                                              Print setup for Claude Code/Desktop/Cursor/Codex
 
@@ -32,8 +34,13 @@ async function main(argv: string[]): Promise<number> {
       'gitignore-assets': { type: 'boolean' },
       'write-desktop-config': { type: 'boolean' },
       help: { type: 'boolean', short: 'h' },
+      version: { type: 'boolean', short: 'v' },
     },
   });
+  if (values.version) {
+    console.log(readPackageVersion());
+    return 0;
+  }
   const [command, ...rest] = positionals;
   if (values.help || !command) {
     console.log(HELP);

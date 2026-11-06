@@ -2,13 +2,36 @@
   "name": "comment-everything",
   "version": "0.1.0",
   "description": "Comment on HTML, Markdown, web pages and media, then hand the comments to Claude Code or any MCP agent.",
+  "keywords": [
+    "mcp",
+    "claude",
+    "claude-code",
+    "annotations",
+    "review",
+    "comments",
+    "markdown",
+    "html",
+    "video"
+  ],
+  "homepage": "https://github.com/<owner>/comment-everything#readme",
+  "bugs": {
+    "url": "https://github.com/<owner>/comment-everything/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/<owner>/comment-everything.git",
+    "directory": "packages/cli"
+  },
   "license": "MIT",
+  "author": "Comment Everything contributors",
   "type": "module",
   "bin": {
     "comment-everything": "./dist/cli.js"
   },
   "files": [
-    "dist"
+    "dist",
+    "README.md",
+    "LICENSE"
   ],
   "engines": {
     "node": ">=20"
@@ -29,5 +52,8 @@
     "@comment-everything/core": "workspace:*",
     "@comment-everything/daemon": "workspace:*",
     "@comment-everything/viewer": "workspace:*"
+  },
+  "publishConfig": {
+    "access": "public"
   }
 }

@@ -3,6 +3,7 @@
   "version": "0.1.0",
   "description": "Shadow-DOM commenting UI shared by the comment-everything viewer and Chrome extension.",
   "license": "MIT",
+  "private": true,
   "type": "module",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",

@@ -63,6 +63,17 @@ describe.skipIf(!existsSync(CLI))('comment-everything CLI (built binary)', () =>
     expect(bad.status).toBe(1);
   });
 
+  it('prints the package version for --version and -v', async () => {
+    const manifest = JSON.parse(
+      await readFile(fileURLToPath(new URL('../package.json', import.meta.url)), 'utf8'),
+    ) as { version: string };
+    for (const flag of ['--version', '-v']) {
+      const out = spawnSync('node', [CLI, flag], { encoding: 'utf8' });
+      expect(out.status).toBe(0);
+      expect(out.stdout.trim()).toBe(manifest.version);
+    }
+  });
+
   it('open: starts the daemon, registers the root and prints a working viewer URL', async () => {
     const out = spawnSync(
       'node',

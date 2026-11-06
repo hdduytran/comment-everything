@@ -3,6 +3,7 @@
   "version": "0.1.0",
   "description": "Comment schema, storage, project-root resolution and prompt formatting for comment-everything.",
   "license": "MIT",
+  "private": true,
   "type": "module",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",

@@ -8,7 +8,8 @@
   "scripts": {
     "build": "node scripts/build-extension.mjs",
     "test": "vitest run",
-    "typecheck": "tsc -p tsconfig.json"
+    "typecheck": "tsc -p tsconfig.json",
+    "zip": "node scripts/zip-for-store.mjs"
   },
   "dependencies": {
     "@comment-everything/core": "workspace:*",

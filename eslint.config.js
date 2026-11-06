@@ -15,7 +15,15 @@ export default tseslint.config(
   ...tseslint.configs.recommended,
   {
     files: ['**/*.mjs'],
-    languageOptions: { globals: { console: 'readonly', process: 'readonly' } },
+    languageOptions: {
+      globals: {
+        console: 'readonly',
+        process: 'readonly',
+        Buffer: 'readonly',
+        fetch: 'readonly',
+        setTimeout: 'readonly',
+      },
+    },
   },
   { rules: { '@typescript-eslint/no-unused-vars': ['error', { argsIgnorePattern: '^_' }] } },
 );
