@@ -47,7 +47,10 @@ export function createShadowHost(
 ): { host: HTMLElement; shadow: ShadowRoot } {
   const host = doc.createElement('div');
   host.setAttribute(HOST_ATTR, '');
-  if (hostStyle) host.style.cssText = hostStyle;
+  // Beat page CSS aimed at the host (`div{...}`): reset everything inline, then apply the host's own
+  // positioning. Without custom positioning the reset is `!important` so page rules cannot undo it.
+  if (hostStyle) host.style.cssText = `all:initial;${hostStyle}`;
+  else host.style.setProperty('all', 'initial', 'important');
   const shadow = host.attachShadow({ mode: 'open' });
   try {
     const sheet = new CSSStyleSheet();

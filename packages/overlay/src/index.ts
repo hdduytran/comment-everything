@@ -20,3 +20,13 @@ export { resolveSelectors, rectsOf, type Anchorable } from './selector-resolver.
 export { findQuote, fullText, offsetOf, rangeFromOffsets } from './text-index.js';
 export { renderRegionPng } from './region-screenshot-capture.js';
 export { HOST_ATTR, isOverlayNode } from './dom-helpers.js';
+export {
+  TooltipController,
+  TOOLTIP_DELAY_MS,
+  modKeyLabel,
+  type TooltipHandle,
+  type TooltipSpec,
+} from './tooltip-controller.js';
+export { TOOLTIP_CSS } from './tooltip-styles.js';
+export { tokensCss } from './overlay-tokens.js';
+export { icon, type IconName } from './icons.js';

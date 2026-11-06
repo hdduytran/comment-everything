@@ -52,12 +52,34 @@ export interface ContentAdapter {
   dispose(): void;
 }
 
+/** One MCP client the daemon has seen (additive: hosts without agent tracking omit all of this). */
+export interface AgentClientSummary {
+  /** The client's own name, e.g. `claude-code` or `claude-ai`. */
+  name: string;
+  version?: string;
+  transport: 'stdio' | 'http';
+  /** Waiting in `wait_for_comments`, or using channel push. */
+  watching: boolean;
+  channel: boolean;
+  lastSeenAt: string;
+}
+
+/** Which AI agents are connected to the daemon right now (`GET /agents/status`). */
+export interface AgentsStatus {
+  connected: AgentClientSummary[];
+  /** At least one connected client picks up a Send without being asked. */
+  watching: boolean;
+  /** Any client has ever connected to this install. */
+  everConnected: boolean;
+}
+
 export type DaemonEvent =
   | { type: 'ready' }
   | { type: 'comment.created' | 'comment.updated'; comment: Comment }
   | { type: 'comment.deleted'; id: string }
   | { type: 'batch.sent'; batchId: string; ids: string[] }
-  | { type: 'file.changed'; root: string; path: string };
+  | { type: 'file.changed'; root: string; path: string }
+  | { type: 'agents.changed'; status: AgentsStatus };
 
 /** Everything the overlay needs from the daemon, scoped to one source (file or URL). */
 export interface DaemonTransport {
@@ -67,6 +89,8 @@ export interface DaemonTransport {
   uploadAsset(image: Blob): Promise<string>;
   /** Existing comments for this source. */
   listComments(): Promise<Comment[]>;
+  /** Optional: connected AI agents. When absent the panel shows no connection indicator. */
+  agentsStatus?(): Promise<AgentsStatus>;
   /** Live events (SSE). The first subscriber opens the stream, the last one closes it. */
   subscribe(handler: (event: DaemonEvent) => void): Unsubscribe;
 }

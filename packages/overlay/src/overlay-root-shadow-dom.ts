@@ -1,27 +1,15 @@
 import type { Comment } from '@comment-everything/core/browser';
+import { AgentStatusTracker } from './agent-status-tracker.js';
+import { describeAgents, describeSendOutcome } from './agent-status-text.js';
+import { defaultCopyText } from './clipboard-copy.js';
 import { SidePanel, type PanelModel } from './comment-side-panel.js';
+import { EventIsolation } from './event-isolation.js';
 import { createShadowHost } from './dom-helpers.js';
 import type { CaptureMode, OverlayHandle, OverlayHost } from './host-adapter.js';
 import { OVERLAY_CSS } from './overlay-styles.js';
 import { DraftStore, buildPrompt } from './overlay-state.js';
 
-/** Clipboard write with a fallback for pages where the async clipboard API is unavailable. */
-async function defaultCopyText(doc: Document, text: string): Promise<void> {
-  try {
-    await navigator.clipboard.writeText(text);
-    return;
-  } catch {
-    // fall through to the legacy path
-  }
-  const area = doc.createElement('textarea');
-  area.value = text;
-  area.style.cssText = 'position:fixed;opacity:0;pointer-events:none';
-  doc.body.append(area);
-  area.select();
-  const ok = doc.execCommand('copy');
-  area.remove();
-  if (!ok) throw new Error('Clipboard is not available');
-}
+const MESSAGE_MS = 8_000;
 
 /**
  * Mount the commenting overlay: a Shadow-DOM side panel wired to the host's content adapter
@@ -38,11 +26,27 @@ export function createOverlay(host: OverlayHost): OverlayHandle {
     message: null as PanelModel['message'],
   };
   let pinsKey = '';
+  let messageTimer: ReturnType<typeof setTimeout> | undefined;
+  const copyText = (text: string) => host.copyText?.(text) ?? defaultCopyText(doc, text);
 
-  const say = (text: string, error = false) => {
-    state.message = { text, error };
+  /** Routine confirmations fade after a while; errors and calls to action stay until replaced. */
+  const say = (text: string, error = false, action?: 'connect') => {
+    clearTimeout(messageTimer);
+    state.message = { text, error, ...(action ? { action } : {}) };
+    if (!error && !action) {
+      messageTimer = setTimeout(() => {
+        state.message = null;
+        render();
+      }, MESSAGE_MS);
+    }
     render();
   };
+  const agents = new AgentStatusTracker(host.daemon, () => render());
+
+  // The shadow host exists before the panel so event isolation can be installed around it.
+  const { host: hostEl, shadow } = createShadowHost(doc, mountPoint, OVERLAY_CSS);
+  hostEl.dataset.cePanel = 'open';
+  const isolation = new EventIsolation(hostEl, doc.defaultView ?? window);
 
   const panel = new SidePanel(
     doc,
@@ -51,6 +55,13 @@ export function createOverlay(host: OverlayHost): OverlayHandle {
         state.mode = mode;
         host.content.setMode(mode);
         render();
+      },
+      cancelMode() {
+        if (!state.mode) return false;
+        state.mode = null;
+        host.content.setMode(null);
+        render();
+        return true;
       },
       editDraft: (id, text) => store.setText(id, text),
       removeDraft: (id) => store.remove(id),
@@ -62,7 +73,7 @@ export function createOverlay(host: OverlayHost): OverlayHandle {
       async copy() {
         try {
           const text = buildPrompt(store.drafts, host.source, host.now?.());
-          await (host.copyText?.(text) ?? defaultCopyText(doc, text));
+          await copyText(text);
           say('Prompt copied to clipboard.');
         } catch (err) {
           say(`Copy failed: ${(err as Error).message}`, true);
@@ -78,19 +89,28 @@ export function createOverlay(host: OverlayHost): OverlayHandle {
         state.busy = true;
         say('Sending…');
         try {
+          // Ask before sending: a watcher that is waiting claims the batch immediately after.
+          const status = await agents.refresh();
           const batch = await host.daemon.sendBatch(store.toInputs(host.source));
           for (const c of batch.comments) sent.set(c.id, c);
           const count = batch.comments.length;
           store.clear();
           state.busy = false;
-          say(`Sent ${count} comment${count === 1 ? '' : 's'}.`);
+          const outcome = describeSendOutcome(status, count);
+          say(outcome.text, false, outcome.action);
         } catch (err) {
           state.busy = false;
           say(`Send failed: ${(err as Error).message}`, true);
         }
       },
     },
-    { modes: host.content.modes, emptyHint: host.content.emptyHint },
+    {
+      modes: host.content.modes,
+      emptyHint: host.content.emptyHint,
+      isolation,
+      copyText,
+      onCollapsedChange: (c) => (hostEl.dataset.cePanel = c ? 'collapsed' : 'open'),
+    },
   );
 
   function render(): void {
@@ -100,6 +120,7 @@ export function createOverlay(host: OverlayHost): OverlayHandle {
       sent: [...sent.values()],
       busy: state.busy,
       message: state.message,
+      agents: describeAgents(agents.current),
     });
     const pins = store.pins();
     const key = JSON.stringify(pins);
@@ -109,7 +130,6 @@ export function createOverlay(host: OverlayHost): OverlayHandle {
     }
   }
 
-  const { host: hostEl, shadow } = createShadowHost(doc, mountPoint, OVERLAY_CSS);
   shadow.append(panel.root);
 
   const offs = [
@@ -136,8 +156,10 @@ export function createOverlay(host: OverlayHost): OverlayHandle {
       render();
     }),
     host.daemon.subscribe((e) => {
+      if (agents.handle(e)) return;
       if (e.type === 'ready') {
         void refresh();
+        void agents.refresh();
         return;
       }
       if (e.type === 'comment.created' || e.type === 'comment.updated') {
@@ -161,12 +183,15 @@ export function createOverlay(host: OverlayHost): OverlayHandle {
     }
   }
   void refresh();
+  void agents.refresh();
   render();
 
   return {
     pendingCount: () => store.drafts.length,
     dispose() {
       offs.forEach((off) => off());
+      clearTimeout(messageTimer);
+      isolation.dispose();
       host.content.setMode(null);
       host.content.setPins([]);
       hostEl.remove();

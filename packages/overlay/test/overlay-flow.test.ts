@@ -73,6 +73,8 @@ const q = <T extends Element>(sel: string) => ui().querySelector(sel) as T;
 const qa = (sel: string) => [...ui().querySelectorAll(sel)] as HTMLElement[];
 const sendArgs = (d: DaemonTransport) =>
   (d.sendBatch as unknown as { mock: { calls: [CommentInput[]][] } }).mock.calls[0]!;
+/** Real typing produces a bubbling, composed `input` event; the overlay relies on that. */
+const USER_INPUT = { bubbles: true, composed: true };
 const tick = () => new Promise((r) => setTimeout(r, 0));
 
 describe('overlay', () => {
@@ -94,14 +96,14 @@ describe('overlay', () => {
 
     const areas = qa('[data-ce=draft-text]') as unknown as HTMLTextAreaElement[];
     areas[0]!.value = 'Make it bigger';
-    areas[0]!.dispatchEvent(new Event('input'));
+    areas[0]!.dispatchEvent(new Event('input', USER_INPUT));
     q<HTMLButtonElement>('[data-ce=send]').click();
     await tick();
     expect(daemon.sendBatch).not.toHaveBeenCalled(); // second draft is still empty
     expect(q('[data-ce=toast]').textContent).toContain('Write a comment');
 
     areas[1]!.value = 'Rename it';
-    areas[1]!.dispatchEvent(new Event('input'));
+    areas[1]!.dispatchEvent(new Event('input', USER_INPUT));
     q<HTMLButtonElement>('[data-ce=send]').click();
     await tick();
     expect(daemon.sendBatch).toHaveBeenCalledOnce();
@@ -130,7 +132,7 @@ describe('overlay', () => {
     await tick();
     const area = q<HTMLTextAreaElement>('[data-ce=draft-text]');
     area.value = 'Looks off';
-    area.dispatchEvent(new Event('input'));
+    area.dispatchEvent(new Event('input', USER_INPUT));
     q<HTMLButtonElement>('[data-ce=send]').click();
     await tick();
     const [inputs] = sendArgs(daemon);
@@ -179,7 +181,7 @@ describe('overlay', () => {
     await tick();
     const area = q<HTMLTextAreaElement>('[data-ce=draft-text]');
     area.value = 'Use a darker colour';
-    area.dispatchEvent(new Event('input'));
+    area.dispatchEvent(new Event('input', USER_INPUT));
     q<HTMLButtonElement>('[data-ce=copy]').click();
     await tick();
     expect(copyText).toHaveBeenCalledOnce();

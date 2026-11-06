@@ -2,6 +2,19 @@ import { createShadowHost, el, isOverlayNode } from './dom-helpers.js';
 
 const PICKER_CSS = `.box{position:fixed;pointer-events:none;border:2px solid #2563eb;background:rgba(37,99,235,.12);border-radius:2px;display:none;box-sizing:border-box}`;
 
+/** Events that must not reach the page while picking (the click itself is handled separately). */
+const SWALLOWED = [
+  'pointerdown',
+  'pointerup',
+  'mousedown',
+  'mouseup',
+  'auxclick',
+  'dblclick',
+  'touchstart',
+  'touchend',
+  'submit',
+] as const;
+
 export interface PickerCallbacks {
   onPick(element: Element): void;
   onCancel(): void;
@@ -40,7 +53,8 @@ export function startElementPicker(doc: Document, cb: PickerCallbacks): () => vo
   };
   const swallow = (ev: Event) => {
     if (isOverlayNode(ev.target)) return;
-    ev.preventDefault();
+    // Touch events keep their default so the tap still produces the `click` that picks.
+    if (!ev.type.startsWith('touch')) ev.preventDefault();
     ev.stopImmediatePropagation();
   };
   const onClick = (ev: MouseEvent) => {
@@ -52,21 +66,21 @@ export function startElementPicker(doc: Document, cb: PickerCallbacks): () => vo
     if (ev.key === 'Escape') cb.onCancel();
   };
 
-  doc.addEventListener('mousemove', onMove, true);
-  doc.addEventListener('click', onClick, true);
-  for (const type of ['mousedown', 'mouseup', 'auxclick', 'submit'] as const) {
-    doc.addEventListener(type, swallow, true);
-  }
-  doc.addEventListener('keydown', onKey, true);
+  // Registered on `window` in the capture phase: first in line, ahead of page listeners on
+  // `document` or below. Pointer, mouse and touch variants are all covered so a pick never
+  // starts a drag, a double-click action or a tap handler on the page.
+  const target = win;
+  target.addEventListener('mousemove', onMove, true);
+  target.addEventListener('click', onClick, true);
+  for (const type of SWALLOWED) target.addEventListener(type, swallow, true);
+  target.addEventListener('keydown', onKey, true);
   win.addEventListener('scroll', hide, true);
 
   return () => {
-    doc.removeEventListener('mousemove', onMove, true);
-    doc.removeEventListener('click', onClick, true);
-    for (const type of ['mousedown', 'mouseup', 'auxclick', 'submit'] as const) {
-      doc.removeEventListener(type, swallow, true);
-    }
-    doc.removeEventListener('keydown', onKey, true);
+    target.removeEventListener('mousemove', onMove, true);
+    target.removeEventListener('click', onClick, true);
+    for (const type of SWALLOWED) target.removeEventListener(type, swallow, true);
+    target.removeEventListener('keydown', onKey, true);
     win.removeEventListener('scroll', hide, true);
     host.remove();
   };

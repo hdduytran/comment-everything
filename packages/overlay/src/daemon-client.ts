@@ -1,5 +1,5 @@
 import type { Comment, CommentInput } from '@comment-everything/core/browser';
-import type { DaemonEvent, DaemonTransport } from './host-adapter.js';
+import type { AgentsStatus, DaemonEvent, DaemonTransport } from './host-adapter.js';
 
 export interface HttpTransportOptions {
   /** Daemon origin, e.g. `http://127.0.0.1:4317`. */
@@ -20,6 +20,7 @@ const EVENT_NAMES = [
   'comment.deleted',
   'batch.sent',
   'file.changed',
+  'agents.changed',
 ] as const;
 
 /** `DaemonTransport` over the daemon's REST API and `/events` stream, authenticated by token. */
@@ -77,6 +78,7 @@ export function createHttpDaemonTransport(opts: HttpTransportOptions): DaemonTra
       if (opts.root) q.set('root', opts.root);
       return (await call<{ comments: Comment[] }>(`/comments?${q}`)).comments;
     },
+    agentsStatus: () => call<AgentsStatus>('/agents/status'),
     subscribe(handler) {
       handlers.add(handler);
       stream ??= openStream();
