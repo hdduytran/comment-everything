@@ -11,6 +11,17 @@ export * from './selector-schemas.js';
 export * from './prompt-formatter.js';
 export * from './fuzzy-text-quote-matcher.js';
 export * from './reanchor-engine.js';
+export {
+  CommentSchema,
+  CommentInputSchema,
+  CommentStatusSchema,
+  SCHEMA_VERSION,
+  applyPatch,
+  createComment,
+  newBatchId,
+  newCommentId,
+  parseComment,
+} from './comment-schema.js';
 export type {
   Comment,
   CommentInput,

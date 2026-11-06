@@ -51,7 +51,7 @@ export function describeSelector(sel: Selector): string {
   }
 }
 
-function formatComment(c: Comment, index: number): string {
+function formatComment(c: Comment, index: number, assetPrefix: string): string {
   const range = c.selectors.flatMap((s) =>
     s.type === 'FragmentSelector' ? [parseMediaFragment(s)] : [],
   )[0];
@@ -66,17 +66,22 @@ function formatComment(c: Comment, index: number): string {
   }
   lines.push('- Comment:', blockquote(c.text || '(no text)'));
   if (c.assets.length > 0) {
-    lines.push('- Assets:', ...c.assets.map((a) => `  - \`.comments/${a}\``));
+    lines.push('- Assets:', ...c.assets.map((a) => `  - \`${assetPrefix}${a}\``));
   }
   if (c.transcript?.text) lines.push('- Transcript:', blockquote(c.transcript.text));
   return lines.join('\n');
+}
+
+export interface FormatPromptOptions {
+  /** Prepended to each asset path (default `.comments/`; exports use `''` for paths next to the file). */
+  assetPrefix?: string;
 }
 
 /**
  * Render comments as a self-contained Markdown prompt for pasting into any agent.
  * Output is deterministic for a given input order.
  */
-export function formatPrompt(comments: readonly Comment[]): string {
+export function formatPrompt(comments: readonly Comment[], opts: FormatPromptOptions = {}): string {
   if (comments.length === 0) return 'No comments.\n';
   const header = [
     `# Review comments (${comments.length})`,
@@ -84,6 +89,8 @@ export function formatPrompt(comments: readonly Comment[]): string {
     "Address each comment below. Each one names the source file or URL, where in it the comment applies, and the reviewer's note.",
     '',
   ];
-  const body = comments.map((c, i) => formatComment(c, i + 1)).join('\n\n');
+  const body = comments
+    .map((c, i) => formatComment(c, i + 1, opts.assetPrefix ?? '.comments/'))
+    .join('\n\n');
   return [...header, body, ''].join('\n');
 }
