@@ -24,3 +24,6 @@ jobs:
       - run: pnpm -r typecheck
       - run: pnpm lint
       - run: pnpm -r test
+      - run: pnpm exec playwright install --with-deps chromium
+        working-directory: packages/e2e
+      - run: pnpm e2e

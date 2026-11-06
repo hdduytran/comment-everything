@@ -1,0 +1,25 @@
+# Review comments (3)
+
+Address each comment below. Each one names the source file or URL, where in it the comment applies, and the reviewer's note.
+
+## 1. `guide.md` (id: draft-1)
+- Location: lines 3-4
+- Location: text quote
+> Intro line one
+> intro line two
+- Comment:
+> Merge these two lines
+
+## 2. `guide.md` (id: draft-2)
+- Location: line 9
+- Location: text quote
+> Second step
+- Comment:
+> Rename step two
+
+## 3. `guide.md` (id: draft-3)
+- Location: line 13
+- Location: text quote
+> const b = 2;
+- Comment:
+> Use let instead of const

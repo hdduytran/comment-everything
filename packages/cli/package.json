@@ -14,7 +14,7 @@
     "node": ">=20"
   },
   "scripts": {
-    "build": "tsup",
+    "build": "tsup && node scripts/copy-viewer-bundle.mjs",
     "test": "vitest run",
     "typecheck": "tsc -p tsconfig.json"
   },
@@ -27,6 +27,7 @@
   },
   "devDependencies": {
     "@comment-everything/core": "workspace:*",
-    "@comment-everything/daemon": "workspace:*"
+    "@comment-everything/daemon": "workspace:*",
+    "@comment-everything/viewer": "workspace:*"
   }
 }

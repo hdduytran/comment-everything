@@ -2,3 +2,6 @@ dist
 pnpm-lock.yaml
 plans
 packages/core/schema
+packages/e2e/fixtures
+**/__snapshots__
+packages/e2e/test-results
