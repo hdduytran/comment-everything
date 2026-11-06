@@ -12,7 +12,7 @@ Comment Everything lets you leave review comments on HTML files, Markdown files,
 
 - **HTML**: pick elements or select text in a sandboxed render of the file. Comments store a CSS selector, XPath and a text quote.
 - **Markdown**: comment on rendered text, code fences and Mermaid diagrams; comments map back to source line ranges.
-- **Live web pages**: a Chrome extension adds the same overlay to any page (element, text or screenshot region) and files the comments in the project that serves it.
+- **Live web pages**: a Chrome extension adds the same overlay to any page (element, text or screenshot region). With the daemon it files the comments in the project that serves the page; on its own it keeps them in the browser and exports them for Claude.
 - **Video and audio**: mark in/out ranges on a waveform with a thumbnail strip. The daemon extracts keyframes with ffmpeg and, when whisper.cpp is installed, a transcript of the range.
 - **Multi-select**: collect many comments, then press **Send** once. They arrive as one batch.
 - **Copy prompt**: produces a self-contained Markdown prompt to paste into any chat.
@@ -115,11 +115,18 @@ The extension is not yet in the Chrome Web Store. Build and load it:
 pnpm install && pnpm --filter @comment-everything/extension build
 ```
 
-1. Open `chrome://extensions`, enable **Developer mode**, choose **Load unpacked**, select `packages/extension/dist`.
-2. Run the daemon: `npx comment-everything serve`.
-3. On a page, click the toolbar button or press `Alt+Shift+C`.
-4. First time only: press **Pair**, confirm on the page the daemon opens, then pick the project folder that serves this site. The mapping is remembered per origin.
-5. Comment and press **Send**. Comments land in `<project>/.comments/` with the page URL as `source`. Pages not mapped to a project are stored under `~/.comment-everything/<host>/`.
+Open `chrome://extensions`, enable **Developer mode**, choose **Load unpacked**, select `packages/extension/dist`. Then click the toolbar button or press `Alt+Shift+C` on any page.
+
+It works in two modes, chosen when you open the panel (and forceable in the extension's options page: **Auto**, **Standalone only**, **Daemon**):
+
+- **Extension only** (no daemon, nothing to install). If nothing answers on `127.0.0.1:4317`, or this browser is not paired, the panel shows **Extension only** in its header and comments stay in this browser (`chrome.storage.local`, screenshots in IndexedDB). You hand them to Claude in one of three ways:
+  1. **Copy prompt**: Markdown for any chat. When the comments include screenshots it copies a rich item (HTML with the images plus plain text), so pasting into Claude Desktop or claude.ai includes the images where the app supports it.
+  2. **Export** (the primary button): saves `Downloads/comment-everything/<host>/<yyyy-mm-dd-hhmm>/comments.md`, `comments.json` and `assets/*.png`, then shows a sentence to give Claude Code: _read ~/Downloads/comment-everything/&lt;path&gt;/comments.md and apply_ (with a copy button).
+  3. **Open in Claude**: copies the prompt, then opens a blank `https://claude.ai/new`. Nothing from your comments is put in the address.
+
+  You can mark saved comments resolved yourself. Nothing leaves the browser.
+
+- **Daemon** (automatic Send). Run `npx comment-everything serve`, press **Pair** in the panel (or the offer it shows when a daemon is running), confirm on the page the daemon opens, then pick the project folder that serves this site (remembered per origin). Comments land in `<project>/.comments/` with the page URL as `source`; pages not mapped to a project are stored under `~/.comment-everything/<host>/`. Comments you saved in extension-only mode are offered as **Move N to project**; the local copies are removed after the daemon accepts them.
 
 More in [packages/extension/README.md](packages/extension/README.md).
 

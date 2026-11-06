@@ -41,7 +41,7 @@ flowchart LR
 | `packages/overlay`   | Shadow-DOM commenting UI shared by the viewer and the extension: element/text/region picking, numbered pins, drafts, Send, Copy prompt, live status of sent comments.                              | Bundled                       |
 | `packages/viewer`    | Browser bundle served by the daemon: sandboxed HTML iframe plus frame agent, line-mapped Markdown renderer (highlight.js, Mermaid), video/audio viewer (waveform, thumbnail strip, in/out ranges). | Bundled into the CLI          |
 | `packages/cli`       | The `comment-everything` binary: `open`, `serve`, `mcp [--channel]`, `stop`, `init`.                                                                                                               | **npm: `comment-everything`** |
-| `packages/extension` | Chrome MV3 extension: injects the overlay, pairs with the daemon, maps origins to projects, captures screenshots.                                                                                  | Chrome Web Store zip          |
+| `packages/extension` | Chrome MV3 extension: injects the overlay, pairs with the daemon, maps origins to projects, captures screenshots, and runs standalone (no daemon) with local storage and export.                   | Chrome Web Store zip          |
 | `packages/plugin`    | Claude Code plugin: `.mcp.json`, skill and slash commands. Referenced by the repo's `.claude-plugin/marketplace.json`.                                                                             | Via the Git repo              |
 | `packages/e2e`       | Playwright suite that drives the built CLI and viewer; also records the README demos.                                                                                                              | No                            |
 
@@ -103,21 +103,59 @@ The sandboxed iframe loads the HTML from `/s/<token>/files/<root>/<file>` so rel
 
 The overlay lives in a Shadow DOM, but shadow boundaries do not stop events: a keystroke typed in the comment box bubbles to `document` and `window`, where sites such as GitHub bind single-key shortcuts. `EventIsolation` (`packages/overlay/src/event-isolation.ts`) registers capture-phase listeners on `window` for keyboard, input, clipboard, IME and focus events and calls `stopImmediatePropagation()` when `composedPath()` includes the overlay host. It never calls `preventDefault()`, so typing and IME composition work. Because that also hides the event from the overlay's own listeners, the panel registers its handlers (draft text sync, Esc, Ctrl/Cmd+Enter) through `EventIsolation.listen()`, which runs them first.
 
-Limit: listeners the page registered on `window` in the capture phase _before_ the overlay was mounted run first and still see the keystroke. Mounting at `document_start` would close that gap.
+Limit: listeners the page registered on `window` in the capture phase _before_ the overlay was mounted run first and still see the keystroke. The optional early shield closes that gap (below).
+
+### Early keyboard shield
+
+`installEventShield(window)` (called by `packages/extension/src/early-event-shield.ts`) installs the same capture-phase listeners at `document_start`, ahead of any page script. It owns the window listeners: an `EventIsolation` created later registers its handlers in a registry on the content script's isolated-world `window` (invisible to the page) and the shield runs them, then stops the event for everything else. Events whose `composedPath()` has no `data-ce-host` element (the marker `HOST_ATTR`) are untouched.
+
+Permission trade-off. A `document_start` script needs host access _before_ the user clicks anything, and `activeTab` only grants access afterwards. Options considered:
+
+| Option                                                                | Permission impact                                                                   | Result                                                                                                               |
+| --------------------------------------------------------------------- | ----------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------- |
+| Static content script on `<all_urls>`                                 | Install-time warning "read and change all your data on all websites", for everyone. | Rejected.                                                                                                            |
+| `registerContentScripts` per origin with a per-origin prompt          | A Chrome permission dialog on the first use of every site.                          | Rejected: breaks "click and comment".                                                                                |
+| **Opt-in: `optional_host_permissions` `<all_urls>` + options toggle** | Nothing by default. The user switches it on once; Chrome asks once for all sites.   | **Chosen.** The script is registered only for origins where the panel was opened before, so it never runs elsewhere. |
+
+Without the opt-in the behaviour is unchanged (the shield is installed when the panel opens). Turning the toggle off unregisters the script and removes the permission.
+
+## Extension modes
+
+On each toggle the service worker decides where comments go (`extension-status.ts`, preference in `extension-mode.ts`):
+
+- **Auto** (default): probe `http://127.0.0.1:<port>/health` with an 800 ms timeout. Unreachable or not paired: standalone. Paired: daemon behaviour (project choice, then Send).
+- **Standalone only**: never contact a daemon.
+- **Daemon**: always the daemon; the setup cards guide start, pairing and project choice.
+
+Standalone mode reuses the overlay unchanged except for additive host options: `OverlayHost.delivery` (replaces Send with an Export action, adds secondary buttons and a rich Copy prompt, names the mode in the connection pill), `DaemonTransport.updateStatus` / `deleteComment` (the user resolves saved comments) and `OverlayHost.offer` (one-time call to action: pair with a running daemon, move local comments to the project).
+
+```mermaid
+flowchart LR
+  O["Overlay (content script)"] -- "createLocalTransport" --> S[("chrome.storage.local<br/>localComments:&lt;page url&gt;")]
+  O -- "ce:asset-put / get (messages)" --> W["Service worker"]
+  W --> I[("IndexedDB<br/>assets/&lt;id&gt;.png blobs")]
+  O -- "ce:export" --> W
+  W -- "chrome.downloads (data URLs)" --> D[("Downloads/comment-everything/<br/>host/yyyy-mm-dd-hhmm/<br/>comments.md, comments.json, assets/")]
+  O -- "ce:open-claude" --> W
+  W -- "tabs.create" --> C["https://claude.ai/new<br/>(no comment content in the URL)"]
+```
+
+Comments use the same zod schema as the daemon (`CommentSchema` from `@comment-everything/core/browser`); entries that fail validation are ignored on read. Screenshots live in IndexedDB owned by the service worker, because IndexedDB opened from a content script would belong to the web page's origin. When a daemon is later paired, unresolved local comments for the origin are uploaded (screenshots first, references rewritten) as one batch to the mapped project, and the local copies are removed only after the daemon accepts each batch.
 
 Element-pick mode swallows pointer, mouse, touch and click events on `window` in the capture phase for the same reason.
 
 ## Where state lives
 
-| Path                                           | Contents                                                               |
-| ---------------------------------------------- | ---------------------------------------------------------------------- |
-| `<project>/.comments/<id>.json`                | Comments for files in the project (and for web pages mapped to it).    |
-| `<project>/.comments/assets/`                  | Keyframes and screenshots.                                             |
-| `~/.comment-everything/token`                  | Per-install token (0600).                                              |
-| `~/.comment-everything/daemon.json`            | Pid, port, token and start time of the running daemon.                 |
-| `~/.comment-everything/roots.json`             | Registered project roots.                                              |
-| `~/.comment-everything/paired-extensions.json` | Paired Chrome extension ids.                                           |
-| `~/.comment-everything/agents-seen.json`       | Whether any MCP client has ever connected (drives the first-run hint). |
-| `~/.comment-everything/<host>/.comments/`      | Comments on web pages not mapped to a project.                         |
+| Path                                                  | Contents                                                                                             |
+| ----------------------------------------------------- | ---------------------------------------------------------------------------------------------------- |
+| `<project>/.comments/<id>.json`                       | Comments for files in the project (and for web pages mapped to it).                                  |
+| `<project>/.comments/assets/`                         | Keyframes and screenshots.                                                                           |
+| `~/.comment-everything/token`                         | Per-install token (0600).                                                                            |
+| `~/.comment-everything/daemon.json`                   | Pid, port, token and start time of the running daemon.                                               |
+| `~/.comment-everything/roots.json`                    | Registered project roots.                                                                            |
+| `~/.comment-everything/paired-extensions.json`        | Paired Chrome extension ids.                                                                         |
+| `~/.comment-everything/agents-seen.json`              | Whether any MCP client has ever connected (drives the first-run hint).                               |
+| Browser: `chrome.storage.local` `localComments:<url>` | Extension-only comments (one list per page URL). Screenshots are blobs in the extension's IndexedDB. |
+| `~/.comment-everything/<host>/.comments/`             | Comments on web pages not mapped to a project.                                                       |
 
 `COMMENT_EVERYTHING_HOME` replaces `~` for all of this (used by tests and sandboxes). `COMMENT_EVERYTHING_EXPORT_CLIPS=1` also exports each media range as an mp4 clip asset.

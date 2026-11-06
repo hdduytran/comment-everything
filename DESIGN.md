@@ -55,10 +55,13 @@ Fixed scale: 11 (chips, key caps) / 12 (secondary, tooltips, toast) / 13 (body) 
 
 - **Panel**: fixed right, 340 px (`min(340px, 100vw)`), z-index `2147483647`; header and mode bar sit on `--ce-bg-subtle`, content on `--ce-bg`, footer on `--ce-bg-subtle`. Collapses to a 40 px handle with a pending-count badge; the host element carries `data-ce-panel="open|collapsed"` so the viewer can reclaim the margin.
 - **Buttons**: 28 px high. Default (outlined), primary (filled accent), danger (red text), icon-only (borderless), link (inline action in the toast). Mode buttons are toggles (`aria-pressed`) with accent-soft fill. Inactive buttons use `aria-disabled` so they stay focusable and keep their tooltip.
-- **Connection pill** in the header: dot + label. Hollow = none, blue = connected, green = watching.
+- **Connection pill** in the header: dot + label. Hollow = none, blue = connected, green = watching, solid grey = extension only (no daemon; its tooltip says comments stay in this browser).
 - **Cards**: 1 px border, no side stripes. Pending cards highlight on `:focus-within`; sent cards use a status chip, a dashed border when detached, and a tinted note block for the agent's resolution.
 - **Tooltips**: `role="tooltip"` element per control referenced by `aria-describedby`; show after 400 ms on hover or keyboard focus, `Esc` dismisses, `position: fixed` so no scroll container clips them, flipped above when there is no room below.
-- **Help sheet**: inline replacement of the panel body (not a modal), tabs with arrow-key navigation, one copy button per command.
+- **Extension-only footer**: Send is replaced by a primary **Export** (download icon); **Copy prompt** and **Clear** sit beside it, and extra delivery buttons (**Open in Claude**, outlined, external-link icon) wrap onto a full-width second row. The saved list is titled "Saved", and each saved card has ghost buttons to mark it resolved or delete it.
+- **Offer strip**: accent-soft band above the toast with one sentence and one primary button (pair with a running daemon, move local comments to the project).
+- **Toast copy**: link-style Copy button beside the message when it carries a sentence to paste (the Claude Code instruction after Export).
+- **Help sheet**: inline replacement of the panel body (not a modal), tabs with arrow-key navigation, one copy button per command. In extension-only mode the first tab is "Extension only".
 - **Focus**: 2 px ring in `--ce-focus`, 1 px offset, on every control, chip and text box.
 
 ## Icons
