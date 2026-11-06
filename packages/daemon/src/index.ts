@@ -23,3 +23,5 @@ export * from './media-routes.js';
 export * from './ffmpeg-keyframe-extractor.js';
 export * from './scene-cut-detector.js';
 export * from './whisper-transcriber.js';
+export * from './paired-extension-store.js';
+export * from './extension-pairing-route.js';

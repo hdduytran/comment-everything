@@ -8,6 +8,8 @@ import {
   tokenGuard,
   type GuardConfig,
 } from './auth-token-and-origin-guard.js';
+import { mountPairingRoutes } from './extension-pairing-route.js';
+import type { PairedExtensionStore } from './paired-extension-store.js';
 import { mountEventsRoute, type CommentEventBus } from './comment-events-sse.js';
 import { ValidationError, type CommentService } from './comment-service.js';
 import type { JobQueue } from './job-queue.js';
@@ -36,6 +38,8 @@ export interface AppDeps extends GuardConfig {
   reanchor?: ReanchorOnFileChange;
   /** Enables the `/media/*` helper routes (thumbnails, scene cuts, tool availability). */
   media?: MediaRouteDeps;
+  /** Chrome extensions the user paired; their origins are the only extension origins allowed. */
+  pairedExtensions: PairedExtensionStore;
 }
 
 /** Query flag set by the viewer on its iframe so the daemon splices the frame agent into HTML. */
@@ -46,9 +50,10 @@ export const FRAME_AGENT_FILE = 'frame-agent.js';
 export function createApp(deps: AppDeps): Hono {
   const app = new Hono();
 
-  app.use('*', hostGuard(deps));
-  app.use('*', originGuard(deps));
-  app.use('*', tokenGuard(deps));
+  const guard: GuardConfig = { ...deps, isPairedExtension: (id) => deps.pairedExtensions.has(id) };
+  app.use('*', hostGuard(guard));
+  app.use('*', originGuard(guard));
+  app.use('*', tokenGuard(guard));
 
   app.onError((err, c) => {
     if (err instanceof ZodError) {
@@ -115,6 +120,7 @@ export function createApp(deps: AppDeps): Hono {
     );
   });
 
+  mountPairingRoutes(app, deps);
   mountViewerAssets(app, deps.viewerDir);
   mountEventsRoute(app, deps.bus);
   if (deps.media) mountMediaRoutes(app, deps.media);

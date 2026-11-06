@@ -18,6 +18,7 @@ import { mediaCacheDir, setupMedia } from './media-job-queue.js';
 import type { MediaTools } from './media-binaries.js';
 import { MCP_SERVER_VERSION } from './mcp-server-tools.js';
 import { ReanchorOnFileChange } from './reanchor-on-file-change.js';
+import { PairedExtensionStore } from './paired-extension-store.js';
 import { ProjectRootRegistry } from './project-root-registry.js';
 import { defaultViewerDir } from './viewer-assets-route.js';
 
@@ -47,6 +48,7 @@ export interface RunningDaemon {
   service: CommentService;
   jobs: JobQueue;
   reanchor: ReanchorOnFileChange;
+  pairedExtensions: PairedExtensionStore;
   stop(): Promise<void>;
 }
 
@@ -87,6 +89,8 @@ export async function startDaemon(opts: StartDaemonOptions = {}): Promise<Runnin
     exportClips: opts.exportClips ?? process.env.COMMENT_EVERYTHING_EXPORT_CLIPS === '1',
     cacheDir: mediaCacheDir(home),
   });
+  const pairedExtensions = new PairedExtensionStore(home);
+  await pairedExtensions.load();
   const fileWatcher = new FileChangeWatcher(bus);
   const reanchor = new ReanchorOnFileChange(service, bus);
   reanchor.start();
@@ -104,6 +108,7 @@ export async function startDaemon(opts: StartDaemonOptions = {}): Promise<Runnin
     fileWatcher,
     reanchor,
     media,
+    pairedExtensions,
   });
 
   const server = await listen(app.fetch, opts.port ?? DEFAULT_PORT);
@@ -130,6 +135,7 @@ export async function startDaemon(opts: StartDaemonOptions = {}): Promise<Runnin
     service,
     jobs,
     reanchor,
+    pairedExtensions,
     async stop() {
       if (useLock) await releaseLock(process.pid, home);
       fileWatcher.close();

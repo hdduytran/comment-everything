@@ -1,9 +1,11 @@
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { createTestEnv, rawRequest, type TestEnv } from './helpers.js';
 
+const PAIRED = 'a'.repeat(32);
 let env: TestEnv;
 beforeAll(async () => {
   env = await createTestEnv();
+  await env.daemon.pairedExtensions.add(PAIRED);
 });
 afterAll(() => env.cleanup());
 
@@ -58,22 +60,25 @@ describe('origin and host checks', () => {
     ).toBe(403);
   });
 
-  it('allows the daemon origin and chrome-extension:// origins', async () => {
+  it('allows the daemon origin and paired chrome-extension:// origins only', async () => {
     const same = await rawRequest(env.daemon.port, '/comments', { ...t(), origin: env.daemon.url });
     expect(same.status).toBe(200);
-    const ext = await rawRequest(env.daemon.port, '/comments', {
+    const origin = `chrome-extension://${PAIRED}`;
+    const unpaired = await rawRequest(env.daemon.port, '/comments', {
       ...t(),
-      origin: 'chrome-extension://abcdef',
+      origin: `chrome-extension://${'p'.repeat(32)}`,
     });
+    expect(unpaired.status).toBe(403);
+    const ext = await rawRequest(env.daemon.port, '/comments', { ...t(), origin });
     expect(ext.status).toBe(200);
-    expect(ext.headers['access-control-allow-origin']).toBe('chrome-extension://abcdef');
+    expect(ext.headers['access-control-allow-origin']).toBe(origin);
   });
 
-  it('answers CORS preflight for the extension without a token, and refuses foreign origins', async () => {
+  it('answers CORS preflight for a paired extension without a token, and refuses others', async () => {
     const ok = await rawRequest(
       env.daemon.port,
       '/comments',
-      { origin: 'chrome-extension://abcdef', 'access-control-request-method': 'POST' },
+      { origin: `chrome-extension://${PAIRED}`, 'access-control-request-method': 'POST' },
       'OPTIONS',
     );
     expect(ok.status).toBe(204);
