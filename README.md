@@ -4,6 +4,10 @@
 
 Comment Everything lets you leave review comments on HTML files, Markdown files, live web pages, and video or audio time ranges, then hands every comment (with its exact location, keyframes and transcript) to Claude Code, Claude Desktop, or any MCP agent. Everything runs on your machine: no account, no cloud.
 
+[![Watch the 1-minute intro video (English, with subtitles)](docs/assets/intro-video-thumb.jpg)](https://github.com/hdduytran/comment-everything/releases/download/v0.1.0/comment-everything-intro.mp4)
+
+▶ [Watch the 1-minute intro](https://github.com/hdduytran/comment-everything/releases/download/v0.1.0/comment-everything-intro.mp4) (English, with subtitles)
+
 ![Commenting on an HTML page and a Markdown file, then the agent resolving the comments](docs/assets/demo-html-markdown.gif)
 
 ![Commenting on two video ranges, then the agent resolving the comments](docs/assets/demo-video.gif)
