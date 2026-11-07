@@ -1,16 +1,12 @@
-
-
-https://github.com/user-attachments/assets/f06a302d-2137-42d6-8923-a18f1f68a519
-
 # Comment Everything
 
 **Point at anything, say what should change, press Send. Claude does the edit.**
 
 Comment Everything lets you leave review comments on HTML files, Markdown files, live web pages, and video or audio time ranges, then hands every comment (with its exact location, keyframes and transcript) to Claude Code, Claude Desktop, or any MCP agent. Everything runs on your machine: no account, no cloud.
 
-[![Watch the 1-minute intro video (English, with subtitles)](docs/assets/intro-video-thumb.jpg)](https://github.com/hdduytran/comment-everything/releases/download/v0.1.0/comment-everything-intro.mp4)
+https://github.com/user-attachments/assets/f06a302d-2137-42d6-8923-a18f1f68a519
 
-▶ [Watch the 1-minute intro](https://github.com/hdduytran/comment-everything/releases/download/v0.1.0/comment-everything-intro.mp4) (English, with subtitles)
+1-minute intro, English with subtitles. Player not showing? [Download the video](https://github.com/hdduytran/comment-everything/releases/download/v0.1.0/comment-everything-intro.mp4).
 
 ![Commenting on an HTML page and a Markdown file, then the agent resolving the comments](docs/assets/demo-html-markdown.gif)
 
